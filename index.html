@@ -298,7 +298,25 @@
       </div>
     </div>
   </main>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
+  const firebaseConfig = {
+    apiKey: "AIZaSyB5kSSNVYfyIGq9c0e1n8EmMtVhXW7gryY",
+    authDomain: "nova-saude-sistema-entregas.firebaseapp.com",
+    projectId: "nova-saude-sistema-entregas",
+    storageBucket: "nova-saude-sistema-entregas.firebasestorage.app",
+    messagingSenderId: "817212957836",
+    appId: "1:817212957836:web:9206d39f86757b0fde873a9"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.entregasRef = collection(db, "entregas");
+  window.addDoc = addDoc;
+</script>
   <script type="module">
     let currentUser = null;
     let lastDashboardDay = new Date().toISOString().slice(0,10);
@@ -1008,7 +1026,7 @@ await idb(null,"pedidos","put",p);
 
 // envia o mesmo pedido para o Firestore
 try {
-  await addDoc(entregasRef, p);
+  await window.addDoc(window.entregasRef, p);
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
@@ -1025,7 +1043,7 @@ await idb(null,"pedidos","put",p);
 
 // envia o mesmo pedido para o Firestore
 try {
-  await addDoc(entregasRef, p);
+  await window.addDoc(window.entregasRef, p);
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
@@ -1044,7 +1062,7 @@ await idb(null,"pedidos","put",p);
 
 // envia o mesmo pedido para o Firestore
 try {
-  await addDoc(entregasRef, p);
+  await window.addDoc(window.entregasRef, p);
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
@@ -1102,7 +1120,7 @@ await idb(null,"pedidos","put",p);
 
 // envia o mesmo pedido para o Firestore
 try {
-  await addDoc(entregasRef, p);
+  await window.addDoc(window.entregasRef, p);
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
@@ -1164,7 +1182,7 @@ await idb(null,"pedidos","put",p);
 
 // envia o mesmo pedido para o Firestore
 try {
-  await addDoc(entregasRef, p);
+  await window.addDoc(window.entregasRef, p);
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
@@ -1182,7 +1200,7 @@ await idb(null,"pedidos","put",p);
 
 // envia o mesmo pedido para o Firestore
 try {
-  await addDoc(entregasRef, p);
+  await window.addDoc(window.entregasRef, p);
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
@@ -1446,7 +1464,7 @@ await idb(null,"pedidos","put",pedido);
 
 // envia o mesmo pedido para o Firestore
 try {
-  await addDoc(entregasRef, pedido);
+  await window.addDoc(window.entregasRef, pedido);
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
@@ -2223,7 +2241,7 @@ await idb(null,"pedidos","put",p);
 
 // envia o mesmo pedido para o Firestore
 try {
-  await addDoc(entregasRef, p);
+  await window.addDoc(window.entregasRef, p);
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
