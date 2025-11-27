@@ -145,8 +145,10 @@ html, body {
   opacity: 1;
 }
 @media print {
-  body{margin:0;background:#e5e7eb;color:#020617;}
-  @page{size:A4 landscape;margin:15mm;}
+  body{margin:0;background:#fff;color:#020617;}
+  @page{size:A4 portrait;margin:15mm;}
+  .no-print{display:none!important;}
+  #historyList{display:none!important;}
 }
 </style>
 </head>
@@ -191,11 +193,11 @@ html, body {
 
   <!-- App -->
   <section id="appView" class="hidden">
-    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-4 no-print">
       <div class="flex gap-2">
-        <button id="btnHome" class="btn-ghost hidden">Início</button>
         <button id="btnHistory" class="btn-ghost">Histórico</button>
         <button id="btnConfig" class="btn-ghost hidden">Configurações</button>
+        <button id="btnRefreshApp" class="btn-ghost" title="Atualizar dados">🔄 Atualizar</button>
       </div>
       <div class="flex gap-2">
         <button id="btnLogout" class="btn-sair">Sair</button>
@@ -205,7 +207,7 @@ html, body {
     <div id="dashboard" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4"></div>
     <div id="cardsEntregadores" class="flex flex-wrap gap-3 mb-4"></div>
 
-    <div class="flex flex-col lg:flex-row gap-5">
+    <div class="flex flex-col lg:flex-row gap-5 no-print">
       <div class="card lg:w-1/3">
         <h3 class="font-semibold mb-3 text-slate-100">Ações Rápidas</h3>
         <button id="btnOpenRegister" class="btn w-full mb-2">Registrar Pedido</button>
@@ -239,7 +241,8 @@ html, body {
 
   <!-- Histórico -->
   <section id="historyView" class="hidden">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <div id="historyPeriodInfo" class="text-center mb-3 text-sm text-slate-300"></div>
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4 no-print">
       <h2 class="font-semibold text-lg text-slate-100">
         Histórico de Entregas
       </h2>
@@ -263,6 +266,7 @@ html, body {
         </select>
         <input id="historySearch" class="border rounded-md px-2 py-1 bg-slate-900 text-slate-100 border-slate-700 placeholder-slate-500 flex-1 min-w-[180px]" placeholder="Pesquisar nº, cliente ou valor ...">
         <button id="btnClearFilters" class="btn-ghost">Limpar Filtro</button>
+        <button id="btnRefreshHistory" class="btn-ghost" title="Atualizar dados">🔄 Atualizar</button>
         <button id="btnExport" class="btn">Exportar Excel CSV</button>
         <button id="btnPrint" class="btn-ghost">Imprimir Dashboard</button>
         <button id="btnResetHistory" class="btn-ghost hidden">Resetar Histórico</button>
@@ -271,7 +275,7 @@ html, body {
     </div>
     <div id="historyDashboard" class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3"></div>
     <div id="historyEntregadores" class="mb-3"></div>
-    <div id="historyList" class="space-y-2 max-h-[62vh] overflow-auto text-xs"></div>
+    <div id="historyList" class="space-y-2 max-h-[62vh] overflow-auto text-xs no-print"></div>
   </section>
 </main>
 
@@ -464,7 +468,6 @@ async function carregaVendedoresSelects(){
   if(selFiltro) selFiltro.innerHTML=opts;
   if(selHist) selHist.innerHTML=opts;
 }
-
 // ===== DASHBOARD =====
 async function atualizaDashboard(){
   const pedidos = await fbGet('pedidos');
@@ -638,6 +641,19 @@ async function excluirPedido(id){
 }
 
 // ===== HISTÓRICO =====
+function getPeriodoTexto(){
+  const periodo=document.getElementById('historyPeriod').value;
+  const dIni=document.getElementById('historyStart').value;
+  const dFim=document.getElementById('historyEnd').value;
+  
+  if(dIni&&dFim) return `Período: ${new Date(dIni+'T00:00:00').toLocaleDateString('pt-BR')} a ${new Date(dFim+'T00:00:00').toLocaleDateString('pt-BR')}`;
+  if(dIni) return `Período: A partir de ${new Date(dIni+'T00:00:00').toLocaleDateString('pt-BR')}`;
+  if(dFim) return `Período: Até ${new Date(dFim+'T00:00:00').toLocaleDateString('pt-BR')}`;
+  if(periodo==='currentMs') return `Período: Mês Atual`;
+  if(periodo==='prevMs') return `Período: Mês Anterior`;
+  return `Período: Todo o histórico`;
+}
+
 async function atualizaHistorico(){
   const pedidos = await fbGet('pedidos');
   const periodo=document.getElementById('historyPeriod').value;
@@ -646,6 +662,8 @@ async function atualizaHistorico(){
   const statusF=document.getElementById('historyStatus').value;
   const vendF=document.getElementById('historySeller').value;
   const busca=document.getElementById('historySearch').value.trim().toLowerCase();
+  
+  document.getElementById('historyPeriodInfo').textContent=getPeriodoTexto();
   
   let lista=pedidos?Object.values(pedidos):[];
   let di=null,df=null;
@@ -727,6 +745,7 @@ async function atualizaHistorico(){
   let html='';
   lista.sort((a,b)=>new Date(b.dataEntrada)-new Date(a.dataEntrada));
   lista.forEach(p=>{
+    const podeEditar=currentUser&&currentUser.perfil!=='observador';
     const linhaClasse=p.status==='nao-conforme'?'bg-red-900/30':'bg-slate-900';
     const eStatus=p.status==='nao-conforme'?'Não conforme':(p.status==='finalizada'&&p.conforme&&p.teveNC?'<span class="text-red-400 font-bold">NC</span> <span>finalizada</span>':(p.status==='finalizada'&&p.conforme?'Finalizada C':(p.status==='rota'?'Em rota':(p.status==='separacao'?'Separação':p.status))));
     const obsTxt=p.observacoes?` | Obs: ${p.observacoes}`:'';
@@ -738,6 +757,11 @@ async function atualizaHistorico(){
         <span class="text-slate-400">R$ ${p.valor.toFixed(2)}</span> | 
         <span class="text-slate-400">${p.pagamento}</span>${obsTxt} | 
         <span>${eStatus}</span>
+        ${linhaEntregadorSaida(p)}
+      </div>
+      <div class="flex flex-col gap-1 ml-2">
+        <button class="btn-small btn-ghost btn-acoes-hist" data-id="${p.id}" ${podeEditar?'':'disabled'}>Ações</button>
+        <button class="btn-small btn-ghost text-red-400 border-red-500 btn-excluir-hist" data-id="${p.id}" ${podeEditar?'':'disabled'}>Excluir</button>
       </div>
     </div>`;
   });
@@ -747,6 +771,22 @@ async function atualizaHistorico(){
   histEl.querySelectorAll('.item-detalhe').forEach(el=>{
     el.addEventListener('click',()=>abrirDetalhesEntrega(el.dataset.id));
   });
+  histEl.querySelectorAll('.btn-acoes-hist').forEach(btn=>{
+    btn.addEventListener('click',ev=>{ev.stopPropagation();abrirAcoesEntrega(btn.dataset.id);});
+  });
+  histEl.querySelectorAll('.btn-excluir-hist').forEach(btn=>{
+    btn.addEventListener('click',ev=>{ev.stopPropagation();excluirPedidoHistorico(btn.dataset.id);});
+  });
+}
+
+async function excluirPedidoHistorico(id){
+  if(!currentUser||currentUser.perfil==='observador')return;
+  
+  confirmarResetComSenha(async()=>{
+    await fbRemove(`pedidos/${id}`);
+    atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
+    alertaModal('Entrega excluída com sucesso.');
+  },'Confirma a exclusão desta entrega?');
 }
 
 function limparFiltrosHistorico(){
@@ -992,7 +1032,6 @@ async function desfazerFinalizacao(id){
   fechaModal(true);
   atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
 }
-
 // ===== TROCAR SENHA =====
 function abreModalTrocarSenhaLogin(usuarioDigitado){
   const html=`<div class="text-xs space-y-3">
@@ -1033,46 +1072,6 @@ async function executarTrocaSenhaLogin(usuarioDigitado){
   if(nova1!==nova2){alertaModal('Nova senha e confirmação não conferem.');return;}
   user.senha=nova1;
   await fbSet(`users/${usuario}`,user);
-  fechaModal(true);
-  alertaModal('Senha alterada com sucesso.');
-}
-
-function abreModalTrocarSenhaInterno(){
-  if(!currentUser)return;
-  const html=`<div class="text-xs space-y-3">
-    <div>Usuário: <b>${currentUser.usuario} (${currentUser.nome})</b></div>
-    <div>
-      <label class="small required block mb-1">Senha atual</label>
-      <input id="senhaAtualInt" type="password" class="border border-slate-700 w-full rounded-md px-2 py-1 bg-slate-900 text-slate-100">
-    </div>
-    <div>
-      <label class="small required block mb-1">Nova senha</label>
-      <input id="novaSenha1Int" type="password" class="border border-slate-700 w-full rounded-md px-2 py-1 bg-slate-900 text-slate-100">
-    </div>
-    <div>
-      <label class="small required block mb-1">Confirmar nova senha</label>
-      <input id="novaSenha2Int" type="password" class="border border-slate-700 w-full rounded-md px-2 py-1 bg-slate-900 text-slate-100">
-    </div>
-    <div class="flex justify-end gap-2 mt-2">
-      <button class="btn-ghost btn-troca-int-cancelar">Cancelar</button>
-      <button class="btn btn-troca-int-salvar">Salvar</button>
-    </div>
-  </div>`;
-  abreModal('Trocar Senha',html);
-  document.querySelectorAll('.btn-troca-int-cancelar').forEach(btn=>btn.addEventListener('click',()=>fechaModal(true)));
-  document.querySelectorAll('.btn-troca-int-salvar').forEach(btn=>btn.addEventListener('click',()=>executarTrocaSenhaInterno()));
-}
-
-async function executarTrocaSenhaInterno(){
-  if(!currentUser)return;
-  const atual=document.getElementById('senhaAtualInt').value.trim();
-  const nova1=document.getElementById('novaSenha1Int').value.trim();
-  const nova2=document.getElementById('novaSenha2Int').value.trim();
-  if(!atual||!nova1||!nova2){alertaModal('Preencha todos os campos de senha.');return;}
-  if(currentUser.senha!==atual){alertaModal('Senha atual incorreta.');return;}
-  if(nova1!==nova2){alertaModal('Nova senha e confirmação não conferem.');return;}
-  currentUser.senha=nova1;
-  await fbSet(`users/${currentUser.usuario}`,currentUser);
   fechaModal(true);
   alertaModal('Senha alterada com sucesso.');
 }
@@ -1424,12 +1423,43 @@ async function confirmarResetComSenha(callback, mensagemConfirm) {
 // ===== EXPORTAR/IMPRIMIR =====
 async function exportarHistoricoCSV(){
   const pedidos = await fbGet('pedidos');
+  const ents = await fbGet('entregadores');
   if(!pedidos){alertaModal('Sem dados para exportar.');return;}
+  
+  const periodo=getPeriodoTexto();
   const lista=Object.values(pedidos);
-  let csv='Número;Cliente;Vendedor;Valor;Pagamento;Entrada;Saída;Entregador;Status;Observações;Justificativa\n';
+  
+  // Calcular totais
+  const rota=lista.filter(p=>p.status==='rota').length;
+  const fin=lista.filter(p=>p.status==='finalizada'&&p.conforme).length;
+  const nc=lista.filter(p=>p.teveNC).length;
+  const total=lista.length;
+  
+  let csv='Nova Saúde - Controle de Entregas\n';
+  csv+=periodo+'\n\n';
+  csv+='DASHBOARD GERAL\n';
+  csv+='Em Rota;Finalizadas C;Não Conformes;Total\n';
+  csv+=`${rota};${fin};${nc};${total}\n\n`;
+  
+  if(ents){
+    csv+='ENTREGAS POR ENTREGADOR\n';
+    csv+='Entregador;Em Rota;Finalizadas;Não Conformes;Total\n';
+    Object.values(ents).forEach(e=>{
+      const l=lista.filter(p=>p.entregador===e.nome);
+      const rotaE=l.filter(p=>p.status==='rota').length;
+      const finE=l.filter(p=>p.status==='finalizada'&&p.conforme).length;
+      const ncE=l.filter(p=>p.teveNC).length;
+      csv+=`${e.nome};${rotaE};${finE};${ncE};${l.length}\n`;
+    });
+    csv+='\n';
+  }
+  
+  csv+='LISTA COMPLETA DE ENTREGAS\n';
+  csv+='Número;Cliente;Vendedor;Valor;Pagamento;Entrada;Saída;Entregador;Status;Observações;Justificativa\n';
   lista.forEach(p=>{
     csv+=`${p.numero};${p.cliente};${p.vendedor};${p.valor};${p.pagamento};${p.dataEntrada};${p.saida||''};${p.entregador||''};${p.status};${p.observacoes||''};${p.justificativa||''}\n`;
   });
+  
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const link=document.createElement('a');
   link.href=URL.createObjectURL(blob);
@@ -1495,7 +1525,6 @@ window.addEventListener('DOMContentLoaded',async()=>{
     document.getElementById('userInfo').textContent=`${currentUser.nome} (${currentUser.perfil})`;
     
     if(currentUser.perfil==='admin'){
-      document.getElementById('btnHome').classList.remove('hidden');
       document.getElementById('btnConfig').classList.remove('hidden');
       document.getElementById('btnResetDay').classList.remove('hidden');
       document.getElementById('btnResetHistory').classList.remove('hidden');
@@ -1507,11 +1536,6 @@ window.addEventListener('DOMContentLoaded',async()=>{
     atualizaListaPedidos();
   }
   
-  document.getElementById('btnHome').addEventListener('click',()=>{
-    document.getElementById('appView').classList.remove('hidden');
-    document.getElementById('historyView').classList.add('hidden');
-  });
-  
   document.getElementById('btnHistory').addEventListener('click',()=>{
     document.getElementById('appView').classList.add('hidden');
     document.getElementById('historyView').classList.remove('hidden');
@@ -1521,6 +1545,14 @@ window.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('btnBack').addEventListener('click',()=>{
     document.getElementById('appView').classList.remove('hidden');
     document.getElementById('historyView').classList.add('hidden');
+  });
+  
+  document.getElementById('btnRefreshApp').addEventListener('click',()=>{
+    atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();
+  });
+  
+  document.getElementById('btnRefreshHistory').addEventListener('click',()=>{
+    atualizaHistorico();
   });
   
   document.getElementById('btnConfig').addEventListener('click',()=>abreModalConfiguracoes());
