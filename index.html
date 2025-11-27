@@ -284,7 +284,7 @@ html, body {
 <!-- Firebase SDK v9+ -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
-import { getDatabase, ref, set, push, get, remove, onValue } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js';
+import { getDatabase, ref, set, push, get, remove } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyB5kSSNVyfIyGq9cOe1n8EmMtVhXW7gryY",
@@ -299,14 +299,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Exportar para uso global
 window.db = db;
 window.ref = ref;
 window.set = set;
 window.push = push;
 window.get = get;
 window.remove = remove;
-window.onValue = onValue;
 </script>
 
 <script type="module">
@@ -321,7 +319,6 @@ function updateClock(){
   const el=document.getElementById('clock');
   if(el) el.textContent=`${f(d.getHours())}:${f(d.getMinutes())}:${f(d.getSeconds())}`;
 }
-window.updateClock = updateClock;
 updateClock();
 setInterval(updateClock,1000);
 
@@ -384,7 +381,6 @@ async function ensureInit(){
     await fbSet('pagamentos/p4', {nome:'Transferência'});
   }
 }
-window.ensureInit = ensureInit;
 
 // ===== MODAL =====
 function abreModal(titulo, html){
@@ -398,14 +394,12 @@ function abreModal(titulo, html){
   const btnFechar = document.getElementById('btnFecharModal');
   if(btnFechar) btnFechar.addEventListener('click', ()=>fechaModal(true));
 }
-window.abreModal = abreModal;
 
 function fechaModal(resetStack=false){
   document.getElementById('modalBg').classList.add('hidden');
   document.getElementById('modalCont').innerHTML = '';
   if(resetStack) modalStackContent=null;
 }
-window.fechaModal = fechaModal;
 
 function alertaModal(msg, onClose){
   const bg = document.getElementById('modalBg');
@@ -427,7 +421,6 @@ function alertaModal(msg, onClose){
   if(btnX) btnX.addEventListener('click', fechar);
   if(btnFechar) btnFechar.addEventListener('click', fechar);
 }
-window.alertaModal = alertaModal;
 
 function restaurarModalStack(){
   if(!modalStackContent){fechaModal(true);return;}
@@ -435,7 +428,6 @@ function restaurarModalStack(){
   cont.innerHTML=modalStackContent;
   modalStackContent=null;
 }
-window.restaurarModalStack = restaurarModalStack;
 
 // ===== UTILS =====
 function aplicarMascaraMoeda(el){
@@ -448,7 +440,6 @@ function aplicarMascaraMoeda(el){
   const intFmt=int.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
   el.value=`${intFmt},${dec}`;
 }
-window.aplicarMascaraMoeda = aplicarMascaraMoeda;
 
 function parseMoedaToNumber(str){
   if(!str) return 0;
@@ -456,14 +447,12 @@ function parseMoedaToNumber(str){
   const n=parseFloat(limpo);
   return isNaN(n)?0:n;
 }
-window.parseMoedaToNumber = parseMoedaToNumber;
 
 function capitalizarPrimeira(str){
   const t=str.trim();
   if(!t)return '';
   return t.charAt(0).toUpperCase()+t.slice(1);
 }
-window.capitalizarPrimeira = capitalizarPrimeira;
 
 // ===== VENDEDORES =====
 async function carregaVendedoresSelects(){
@@ -475,7 +464,6 @@ async function carregaVendedoresSelects(){
   if(selFiltro) selFiltro.innerHTML=opts;
   if(selHist) selHist.innerHTML=opts;
 }
-window.carregaVendedoresSelects = carregaVendedoresSelects;
 
 // ===== DASHBOARD =====
 async function atualizaDashboard(){
@@ -516,7 +504,6 @@ async function atualizaDashboard(){
     if(!linhas.length)return '';
     return `<div class="kpi-tooltip">${linhas.map(l=>`<div>${l}</div>`).join('')}</div>`;
   }
-  window.renderTooltip = renderTooltip;
 
   document.getElementById('dashboard').innerHTML=`
     <div class="card-kpi bg-blue-600">
@@ -567,7 +554,6 @@ async function atualizaCardsEntregadores(){
   }
   document.getElementById('cardsEntregadores').innerHTML=html||'<p class="text-xs text-slate-300">Nenhum entregador cadastrado.</p>';
 }
-window.atualizaCardsEntregadores = atualizaCardsEntregadores;
 
 function linhaEntregadorSaida(p){
   if(!p.saida||!p.entregador) return '';
@@ -576,7 +562,6 @@ function linhaEntregadorSaida(p){
     Entregador: ${p.entregador} - Saída para rota de entrega: ${hSaida}
   </div>`;
 }
-window.linhaEntregadorSaida = linhaEntregadorSaida;
 
 async function atualizaListaPedidos(){
   const pedidos = await fbGet('pedidos');
@@ -593,8 +578,6 @@ async function atualizaListaPedidos(){
   }
   if(filtroVend!=='Todos') lista=lista.filter(p=>p.vendedor===filtroVend);
   if(busca) lista=lista.filter(p=>p.numero.toLowerCase().includes(busca)||p.cliente.toLowerCase().includes(busca)||String(p.valor).includes(busca));
-  
-  window.atualizaListaPedidos = atualizaListaPedidos;
   
   const corStatus=(p)=>{
     if(p.status==='separacao')return'badge badge-blue';
@@ -624,7 +607,7 @@ async function atualizaListaPedidos(){
         <div class="font-semibold text-slate-100">${p.numero} - ${p.cliente}</div>
         <div class="text-slate-300">${p.vendedor} | ${new Date(p.dataEntrada).toLocaleString('pt-BR')} | R$ ${p.valor.toFixed(2)} | ${p.pagamento}${obsTxt}</div>
         ${linhaEntregadorSaida(p)}
-        <div class="mt-1"><span class="${corStatus(p)}">${p.status==='finalizada'&&p.conforme&&p.teveNC?'<span class="text-red-700 font-bold">NC</span> <span>finalizada</span>':txtStatus(p)}</span></div>
+        <div class="mt-1"><span class="${corStatus(p)}">${txtStatus(p)}</span></div>
       </div>
       <div class="flex flex-col gap-1 ml-2">
         <button class="btn-small btn-ghost btn-acoes" data-id="${p.id}" ${podeEditar?'':'disabled'}>Ações</button>
@@ -653,7 +636,6 @@ async function excluirPedido(id){
   await fbRemove(`pedidos/${id}`);
   atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
 }
-window.excluirPedido = excluirPedido;
 
 // ===== HISTÓRICO =====
 async function atualizaHistorico(){
@@ -664,8 +646,6 @@ async function atualizaHistorico(){
   const statusF=document.getElementById('historyStatus').value;
   const vendF=document.getElementById('historySeller').value;
   const busca=document.getElementById('historySearch').value.trim().toLowerCase();
-  
-  window.atualizaHistorico = atualizaHistorico;
   
   let lista=pedidos?Object.values(pedidos):[];
   let di=null,df=null;
@@ -747,7 +727,6 @@ async function atualizaHistorico(){
   let html='';
   lista.sort((a,b)=>new Date(b.dataEntrada)-new Date(a.dataEntrada));
   lista.forEach(p=>{
-    const podeEditar=currentUser&&currentUser.perfil!=='observador';
     const linhaClasse=p.status==='nao-conforme'?'bg-red-900/30':'bg-slate-900';
     const eStatus=p.status==='nao-conforme'?'Não conforme':(p.status==='finalizada'&&p.conforme&&p.teveNC?'<span class="text-red-400 font-bold">NC</span> <span>finalizada</span>':(p.status==='finalizada'&&p.conforme?'Finalizada C':(p.status==='rota'?'Em rota':(p.status==='separacao'?'Separação':p.status))));
     const obsTxt=p.observacoes?` | Obs: ${p.observacoes}`:'';
@@ -779,7 +758,6 @@ function limparFiltrosHistorico(){
   document.getElementById('historySearch').value='';
   atualizaHistorico();
 }
-window.limparFiltrosHistorico = limparFiltrosHistorico;
 
 // ===== DETALHES/AÇÕES =====
 async function abrirDetalhesEntrega(id){
@@ -797,8 +775,6 @@ async function abrirDetalhesEntrega(id){
   }else{
     andHtml='<div class="text-xs text-slate-400">Sem andamentos</div>';
   }
-  
-  window.abrirDetalhesEntrega = abrirDetalhesEntrega;
   
   const html=`<div class="text-xs space-y-1">
     <div><b>Número:</b> ${p.numero}</div>
@@ -831,8 +807,6 @@ async function abrirAcoesEntrega(id){
   if(p.saida){
     saidaInfo=`<div class="text-xs text-slate-400">Saída registrada: ${new Date(p.saida).toLocaleString('pt-BR')} (${p.entregador||'-'})</div>`;
   }
-  
-  window.abrirAcoesEntrega = abrirAcoesEntrega;
   
   let botoesSaida='';
   let blocoResultado='';
@@ -918,7 +892,6 @@ async function confirmarSaida(id){
   p.saida=new Date().toISOString();
   p.status='rota';
   await fbSet(`pedidos/${id}`,p);
-  window.confirmarSaida = confirmarSaida;
   fechaModal(true);
   atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
 }
@@ -929,7 +902,6 @@ async function desfazerSaida(id){
   const p=pedidos[id];
   p.saida=null;p.entregador=null;p.status='separacao';
   await fbSet(`pedidos/${id}`,p);
-  window.desfazerSaida = desfazerSaida;
   fechaModal(true);
   atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
 }
@@ -941,7 +913,6 @@ async function finalizarEntregaConforme(id){
   p.status='finalizada';
   p.conforme=true;
   await fbSet(`pedidos/${id}`,p);
-  window.finalizarEntregaConforme = finalizarEntregaConforme;
   fechaModal(true);
   atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
 }
@@ -959,7 +930,6 @@ async function abrirNaoConforme(id){
   document.querySelectorAll('.btn-nc-cancelar').forEach(btn=>btn.addEventListener('click',()=>fechaModal(true)));
   document.querySelectorAll('.btn-nc-salvar').forEach(btn=>btn.addEventListener('click',()=>salvarNaoConformeInicial(btn.dataset.id)));
 }
-window.abrirNaoConforme = abrirNaoConforme;
 
 async function salvarNaoConformeInicial(id){
   let txt=document.getElementById('ncJust').value;
@@ -975,7 +945,6 @@ async function salvarNaoConformeInicial(id){
   p.andamentos.push({data:new Date().toISOString(),usuario:currentUser.nome,descricao:txt});
   p.teveNC=true;
   await fbSet(`pedidos/${id}`,p);
-  window.salvarNaoConformeInicial = salvarNaoConformeInicial;
   fechaModal(true);
   atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
 }
@@ -993,7 +962,6 @@ async function abrirRegistrarAndamento(id){
   document.querySelectorAll('.btn-andamento-manter').forEach(btn=>btn.addEventListener('click',()=>salvarAndamentoNc(btn.dataset.id,'manter')));
   document.querySelectorAll('.btn-andamento-finalizar').forEach(btn=>btn.addEventListener('click',()=>salvarAndamentoNc(btn.dataset.id,'finalizar')));
 }
-window.abrirRegistrarAndamento = abrirRegistrarAndamento;
 
 async function salvarAndamentoNc(id,acao){
   let txt=document.getElementById('ncAnd').value;
@@ -1010,7 +978,6 @@ async function salvarAndamentoNc(id,acao){
     p.conforme=true;
   }
   await fbSet(`pedidos/${id}`,p);
-  window.salvarAndamentoNc = salvarAndamentoNc;
   fechaModal(true);
   atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
 }
@@ -1022,7 +989,6 @@ async function desfazerFinalizacao(id){
   p.status=p.saida?'rota':'separacao';
   p.conforme=null;
   await fbSet(`pedidos/${id}`,p);
-  window.desfazerFinalizacao = desfazerFinalizacao;
   fechaModal(true);
   atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
 }
@@ -1052,7 +1018,6 @@ function abreModalTrocarSenhaLogin(usuarioDigitado){
   document.querySelectorAll('.btn-troca-cancelar').forEach(btn=>btn.addEventListener('click',()=>fechaModal(true)));
   document.querySelectorAll('.btn-troca-salvar').forEach(btn=>btn.addEventListener('click',()=>executarTrocaSenhaLogin(btn.dataset.usuario)));
 }
-window.abreModalTrocarSenhaLogin = abreModalTrocarSenhaLogin;
 
 async function executarTrocaSenhaLogin(usuarioDigitado){
   const usuario=usuarioDigitado.trim().toLowerCase();
@@ -1071,7 +1036,6 @@ async function executarTrocaSenhaLogin(usuarioDigitado){
   fechaModal(true);
   alertaModal('Senha alterada com sucesso.');
 }
-window.executarTrocaSenhaLogin = executarTrocaSenhaLogin;
 
 function abreModalTrocarSenhaInterno(){
   if(!currentUser)return;
@@ -1098,7 +1062,6 @@ function abreModalTrocarSenhaInterno(){
   document.querySelectorAll('.btn-troca-int-cancelar').forEach(btn=>btn.addEventListener('click',()=>fechaModal(true)));
   document.querySelectorAll('.btn-troca-int-salvar').forEach(btn=>btn.addEventListener('click',()=>executarTrocaSenhaInterno()));
 }
-window.abreModalTrocarSenhaInterno = abreModalTrocarSenhaInterno;
 
 async function executarTrocaSenhaInterno(){
   if(!currentUser)return;
@@ -1113,7 +1076,6 @@ async function executarTrocaSenhaInterno(){
   fechaModal(true);
   alertaModal('Senha alterada com sucesso.');
 }
-window.executarTrocaSenhaInterno = executarTrocaSenhaInterno;
 
 // ===== REGISTRAR PEDIDO =====
 async function abreModalRegistrarPedido(){
@@ -1172,7 +1134,6 @@ async function abreModalRegistrarPedido(){
   document.querySelectorAll('.btn-rp-fechar').forEach(btn=>btn.addEventListener('click',()=>fechaModal(true)));
   document.querySelectorAll('.btn-rp-salvar').forEach(btn=>btn.addEventListener('click',()=>salvarNovoPedido()));
 }
-window.abreModalRegistrarPedido = abreModalRegistrarPedido;
 
 async function salvarNovoPedido(){
   const numero=document.getElementById('rpNumero').value.trim();
@@ -1185,8 +1146,6 @@ async function salvarNovoPedido(){
   
   if(!numero||!cliente||!vendedor||!pagamento){alertaModal('Preencha número, cliente, vendedor e pagamento.');return;}
   if(valor===0){alertaModal('Informe um valor maior que zero.');return;}
-  
-  window.salvarNovoPedido = salvarNovoPedido;
   
   const pedido={
     numero,
@@ -1233,7 +1192,6 @@ async function abreModalConfiguracoes(){
   document.querySelectorAll('.btn-config-fechar').forEach(btn=>btn.addEventListener('click',()=>fechaModal(true)));
   mostrarAbaConfig('usuarios');
 }
-window.abreModalConfiguracoes = abreModalConfiguracoes;
 
 async function mostrarAbaConfig(aba){
   const cont=document.getElementById('configContent');
@@ -1312,7 +1270,6 @@ async function mostrarAbaConfig(aba){
     document.querySelectorAll('.btn-add-pagamento').forEach(btn=>btn.addEventListener('click',()=>abreModalAddPagamento()));
   }
 }
-window.mostrarAbaConfig = mostrarAbaConfig;
 
 function abreModalAddUsuario(){
   const html=`<div class="text-xs space-y-2">
@@ -1403,6 +1360,67 @@ function abreModalAddPagamento(){
   }));
 }
 
+// ===== CONFIRMAÇÃO ADMIN PARA RESET =====
+async function confirmarResetComSenha(callback, mensagemConfirm) {
+  const html = `<div class="space-y-3 text-xs">
+    <div class="text-orange-400 font-semibold">⚠️ ATENÇÃO: Esta ação requer confirmação de administrador</div>
+    <div class="text-slate-300">${mensagemConfirm}</div>
+    <div>
+      <label class="small required block mb-1">Usuário Administrador</label>
+      <input id="resetUsuario" class="border border-slate-700 rounded-md px-2 py-1 w-full bg-slate-900 text-slate-100">
+    </div>
+    <div>
+      <label class="small required block mb-1">Senha</label>
+      <input id="resetSenha" type="password" class="border border-slate-700 rounded-md px-2 py-1 w-full bg-slate-900 text-slate-100">
+    </div>
+    <div class="flex gap-2 justify-end">
+      <button class="btn-ghost btn-reset-cancelar">Cancelar</button>
+      <button class="btn bg-red-600 btn-reset-confirmar">Confirmar e Executar</button>
+    </div>
+  </div>`;
+  
+  abreModal('Confirmação Necessária', html);
+  
+  document.querySelectorAll('.btn-reset-cancelar').forEach(btn => {
+    btn.addEventListener('click', () => fechaModal(true));
+  });
+  
+  document.querySelectorAll('.btn-reset-confirmar').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const usuario = document.getElementById('resetUsuario').value.trim().toLowerCase();
+      const senha = document.getElementById('resetSenha').value.trim();
+      
+      if (!usuario || !senha) {
+        alertaModal('Informe usuário e senha.');
+        return;
+      }
+      
+      const user = await fbGet(`users/${usuario}`);
+      
+      if (!user) {
+        alertaModal('Usuário não encontrado.');
+        return;
+      }
+      
+      if (user.senha !== senha) {
+        alertaModal('Senha incorreta.');
+        return;
+      }
+      
+      if (user.perfil !== 'admin') {
+        alertaModal('Apenas administradores podem executar esta ação.');
+        return;
+      }
+      
+      fechaModal(true);
+      
+      if (confirm(mensagemConfirm)) {
+        callback();
+      }
+    });
+  });
+}
+
 // ===== EXPORTAR/IMPRIMIR =====
 async function exportarHistoricoCSV(){
   const pedidos = await fbGet('pedidos');
@@ -1418,12 +1436,10 @@ async function exportarHistoricoCSV(){
   link.download='historico_entregas.csv';
   link.click();
 }
-window.exportarHistoricoCSV = exportarHistoricoCSV;
 
 function imprimirDashboard(){
   window.print();
 }
-window.imprimirDashboard = imprimirDashboard;
 
 // ===== LOGIN =====
 window.addEventListener('DOMContentLoaded',async()=>{
@@ -1441,13 +1457,6 @@ window.addEventListener('DOMContentLoaded',async()=>{
     else{inputPass.type='password';togglePass.textContent='Mostrar';}
   });
   
-  btnLogin.addEventListener('click',()=>executarLogin());
-  btnChangePass.addEventListener('click',()=>{
-    const u=inputUser.value.trim().toLowerCase();
-    if(!u){loginMsg.textContent='Informe usuário e senha.';return;}
-    abreModalTrocarSenhaLogin(u);
-  });
-  
   async function executarLogin(){
     const u=inputUser.value.trim().toLowerCase();
     const s=inputPass.value.trim();
@@ -1457,7 +1466,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
     try{
       user = await fbGet(`users/${u}`);
     }catch(e){
-      loginMsg.textContent='Erro ao acessar armazenamento local.';return;
+      loginMsg.textContent='Erro ao acessar banco de dados.';return;
     }
     
     if(!user){loginMsg.textContent='Usuário não encontrado.';return;}
@@ -1468,7 +1477,17 @@ window.addEventListener('DOMContentLoaded',async()=>{
     showApp();
   }
   
-  window.executarLogin = executarLogin;
+  btnLogin.addEventListener('click',()=>executarLogin());
+  
+  // ENTER para login
+  inputUser.addEventListener('keypress',(e)=>{if(e.key==='Enter')executarLogin();});
+  inputPass.addEventListener('keypress',(e)=>{if(e.key==='Enter')executarLogin();});
+  
+  btnChangePass.addEventListener('click',()=>{
+    const u=inputUser.value.trim().toLowerCase();
+    if(!u){loginMsg.textContent='Informe usuário e senha.';return;}
+    abreModalTrocarSenhaLogin(u);
+  });
   
   function showApp(){
     document.getElementById('loginView').classList.add('hidden');
@@ -1531,24 +1550,28 @@ window.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('historySeller').addEventListener('change',()=>atualizaHistorico());
   document.getElementById('historySearch').addEventListener('input',()=>atualizaHistorico());
   
-  document.getElementById('btnResetDay').addEventListener('click',async()=>{
-    if(!confirm('ATENÇÃO: Isso vai apagar TODOS os pedidos do dia atual. Confirma?'))return;
-    const pedidos = await fbGet('pedidos');
-    const hoje=new Date().toISOString().slice(0,10);
-    if(pedidos){
-      for(const [k,p] of Object.entries(pedidos)){
-        if(p.dataEntrada?.startsWith(hoje)){
-          await fbRemove(`pedidos/${k}`);
+  document.getElementById('btnResetDay').addEventListener('click', () => {
+    confirmarResetComSenha(async () => {
+      const pedidos = await fbGet('pedidos');
+      const hoje = new Date().toISOString().slice(0, 10);
+      if (pedidos) {
+        for (const [k, p] of Object.entries(pedidos)) {
+          if (p.dataEntrada?.startsWith(hoje)) {
+            await fbRemove(`pedidos/${k}`);
+          }
         }
       }
-    }
-    atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();
+      atualizaDashboard(); atualizaCardsEntregadores(); atualizaListaPedidos();
+      alertaModal('Pedidos do dia foram removidos com sucesso.');
+    }, 'Isso vai apagar TODOS os pedidos do dia atual. Confirma?');
   });
-  
-  document.getElementById('btnResetHistory').addEventListener('click',async()=>{
-    if(!confirm('ATENÇÃO: Isso vai apagar TODO o histórico de entregas. Confirma?'))return;
-    await fbRemove('pedidos');
-    atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
+
+  document.getElementById('btnResetHistory').addEventListener('click', () => {
+    confirmarResetComSenha(async () => {
+      await fbRemove('pedidos');
+      atualizaDashboard(); atualizaCardsEntregadores(); atualizaListaPedidos(); atualizaHistorico();
+      alertaModal('Todo o histórico foi removido com sucesso.');
+    }, 'Isso vai apagar TODO o histórico de entregas. Confirma?');
   });
 });
 </script>
