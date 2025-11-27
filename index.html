@@ -2321,59 +2321,85 @@ const loginMsg=document.getElementById("loginMsg");
         currentUser=user;
         showApp();
       }
-window.executarLogin = executarLogin
-        btnLogin.addEventListener("click",executarLogin);
-  inputUser.addEventListener("keydown",e=>{
-    if(e.key==="Enter"){e.preventDefault();executarLogin();}
-  });
-  inputPass.addEventListener("keydown",e=>{
-    if(e.key==="Enter"){e.preventDefault();executarLogin();}
-  });
+window.executarLogin = executarLogin;
 
-  btnLogout.addEventListener("click",()=>{
-    currentUser=null;
+if (btnLogin) {
+  btnLogin.addEventListener("click", executarLogin);
+}
+if (inputUser) {
+  inputUser.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); executarLogin(); }
+  });
+}
+if (inputPass) {
+  inputPass.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); executarLogin(); }
+  });
+}
+
+if (btnLogout) {
+  btnLogout.addEventListener("click", () => {
+    currentUser = null;
     document.getElementById("appView").classList.add("hidden");
     document.getElementById("historyView").classList.add("hidden");
     document.getElementById("loginView").classList.remove("hidden");
-    inputPass.value="";
-    document.getElementById("userInfo").textContent="";
+    inputPass.value = "";
+    document.getElementById("userInfo").textContent = "";
   });
+}
 
-  btnHistory.addEventListener("click",()=>{
-    atualizaHistorico();
+if (btnHome) {
+  btnHome.addEventListener("click", () => {
+    document.getElementById("historyView").classList.add("hidden");
+    document.getElementById("appView").classList.remove("hidden");
+    btnHome.classList.add("hidden");
+  });
+}
+
+if (btnHistory) {
+  btnHistory.addEventListener("click", () => {
     document.getElementById("appView").classList.add("hidden");
     document.getElementById("historyView").classList.remove("hidden");
     btnHome.classList.remove("hidden");
   });
+}
 
-  btnHome.addEventListener("click",()=>{
-    document.getElementById("historyView").classList.add("hidden");
-    document.getElementById("appView").classList.remove("hidden");
-    btnHome.classList.add("hidden");
-  });
+if (btnConfig) {
+  btnConfig.addEventListener("click", () => abreModalConfiguracoes());
+}
 
-  btnConfig.addEventListener("click",()=>abreModalConfiguracoes());
-
-  btnChangePass.addEventListener("click",()=>{
-    if(!currentUser){
-      const u=inputUser.value.trim();
+if (btnChangePass) {
+  btnChangePass.addEventListener("click", () => {
+    if (!currentUser) {
+      const u = inputUser.value.trim();
       abreModalTrocarSenhaLogin(u);
-    }else{
+    } else {
       abreModalTrocarSenhaInterno();
     }
   });
+}
 
-  btnOpenReg.addEventListener("click",()=>abreModalRegistrarPedido());
-  btnExport.addEventListener("click",()=>exportarHistoricoCSV());
-  btnPrint.addEventListener("click",()=>imprimirHistorico());
-  btnBack.addEventListener("click",()=>{
-    document.getElementById("historyView").classList.add("hidden");
-    document.getElementById("appView").classList.remove("hidden");
-    btnHome.classList.add("hidden");
-  });
-  btnClearFilters.addEventListener("click",()=>limparFiltrosHistorico());
-  btnResetHistory.addEventListener("click",()=>abrirResetHistorico());
-  btnResetDay.addEventListener("click",()=>abrirResetDia());
+if (btnOpenReg) {
+  btnOpenReg.addEventListener("click", () => abreModalRegistrarPedido());
+}
+if (btnExport) {
+  btnExport.addEventListener("click", () => exportarHistoricoCSV());
+}
+if (btnPrint) {
+  btnPrint.addEventListener("click", () => imprimirHistorico());
+}
+if (btnBack) {
+  btnBack.addEventListener("click", () => voltarLogin());
+}
+if (btnClearFilters) {
+  btnClearFilters.addEventListener("click", () => limparFiltros());
+}
+if (btnResetHistory) {
+  btnResetHistory.addEventListener("click", () => abrirResetHistorico());
+}
+if (btnResetDay) {
+  btnResetDay.addEventListener("click", () => abrirResetDia());
+}
 
   document.getElementById("filterStatus")
     .addEventListener("change",()=>atualizaListaPedidos());
