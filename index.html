@@ -2309,7 +2309,27 @@ const loginMsg=document.getElementById("loginMsg");
     }else{
       inputPass.type="password";
       togglePass.textContent="Mostrar";
-    }
+if (btnOpenReg) {
+  btnOpenReg.addEventListener("click", () => abreModalRegistrarPedido());
+}
+if (btnExport) {
+  btnExport.addEventListener("click", () => exportarHistoricoCSV());
+}
+if (btnPrint) {
+  btnPrint.addEventListener("click", () => imprimirHistorico());
+}
+if (btnBack) {
+  btnBack.addEventListener("click", () => voltarLogin());
+}
+if (btnClearFilters) {
+  btnClearFilters.addEventListener("click", () => limparFiltros());
+}
+if (btnResetHistory) {
+  btnResetHistory.addEventListener("click", () => abrirResetHistorico());
+}
+if (btnResetDay) {
+  btnResetDay.addEventListener("click", () => abrirResetDia());
+}
   });
 });
 
