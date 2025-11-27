@@ -2302,13 +2302,16 @@ inputPass = document.getElementById("loginPass");
 const togglePass=document.getElementById("toggleLoginPass");
 const loginMsg=document.getElementById("loginMsg");
 
-  togglePass.addEventListener("click",()=>{
-    if(inputPass.type==="password"){
-      inputPass.type="text";
-      togglePass.textContent="Ocultar";
-    }else{
-      inputPass.type="password";
-      togglePass.textContent="Mostrar";
+  togglePass.addEventListener("click", ()=>{
+  if (inputPass.type === "password") {
+    inputPass.type = "text";
+    togglePass.textContent = "Ocultar";
+  } else {
+    inputPass.type = "password";
+    togglePass.textContent = "Mostrar";
+  }
+});
+
 if (btnOpenReg) {
   btnOpenReg.addEventListener("click", () => abreModalRegistrarPedido());
 }
@@ -2330,8 +2333,6 @@ if (btnResetHistory) {
 if (btnResetDay) {
   btnResetDay.addEventListener("click", () => abrirResetDia());
 }
-  });
-});
 
       async function executarLogin(){
   const u = inputUser.value.trim().toLowerCase();
