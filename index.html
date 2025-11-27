@@ -208,7 +208,7 @@ html, body {
     <div id="cardsEntregadores" class="flex flex-wrap gap-3 mb-4"></div>
 
     <div class="flex flex-col lg:flex-row gap-5 no-print">
-      <div class="card lg:w-1/3">
+      <div class="card lg:w-1/3" id="quickActionsCard">
         <h3 class="font-semibold mb-3 text-slate-100">Ações Rápidas</h3>
         <button id="btnOpenRegister" class="btn w-full mb-2">Registrar Pedido</button>
         <p class="text-xs text-slate-300">
@@ -468,6 +468,7 @@ async function carregaVendedoresSelects(){
   if(selFiltro) selFiltro.innerHTML=opts;
   if(selHist) selHist.innerHTML=opts;
 }
+
 // ===== DASHBOARD =====
 async function atualizaDashboard(){
   const pedidos = await fbGet('pedidos');
@@ -612,10 +613,11 @@ async function atualizaListaPedidos(){
         ${linhaEntregadorSaida(p)}
         <div class="mt-1"><span class="${corStatus(p)}">${txtStatus(p)}</span></div>
       </div>
+      ${podeEditar ? `
       <div class="flex flex-col gap-1 ml-2">
-        <button class="btn-small btn-ghost btn-acoes" data-id="${p.id}" ${podeEditar?'':'disabled'}>Ações</button>
-        <button class="btn-small btn-ghost text-red-400 border-red-500 btn-excluir" data-id="${p.id}" ${podeEditar?'':'disabled'}>Excluir</button>
-      </div>
+        <button class="btn-small btn-ghost btn-acoes" data-id="${p.id}">Ações</button>
+        <button class="btn-small btn-ghost text-red-400 border-red-500 btn-excluir" data-id="${p.id}">Excluir</button>
+      </div>` : ''}
     </div>`;
   });
   
@@ -759,10 +761,11 @@ async function atualizaHistorico(){
         <span>${eStatus}</span>
         ${linhaEntregadorSaida(p)}
       </div>
+      ${podeEditar ? `
       <div class="flex flex-col gap-1 ml-2">
-        <button class="btn-small btn-ghost btn-acoes-hist" data-id="${p.id}" ${podeEditar?'':'disabled'}>Ações</button>
-        <button class="btn-small btn-ghost text-red-400 border-red-500 btn-excluir-hist" data-id="${p.id}" ${podeEditar?'':'disabled'}>Excluir</button>
-      </div>
+        <button class="btn-small btn-ghost btn-acoes-hist" data-id="${p.id}">Ações</button>
+        <button class="btn-small btn-ghost text-red-400 border-red-500 btn-excluir-hist" data-id="${p.id}">Excluir</button>
+      </div>` : ''}
     </div>`;
   });
   
@@ -1032,7 +1035,8 @@ async function desfazerFinalizacao(id){
   fechaModal(true);
   atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
 }
-// ===== TROCAR SENHA =====
+
+// ===== TROCAR SENHA (LOGIN) =====
 function abreModalTrocarSenhaLogin(usuarioDigitado){
   const html=`<div class="text-xs space-y-3">
     <div>Usuário: <b>${usuarioDigitado||'não informado'}</b></div>
@@ -1060,16 +1064,16 @@ function abreModalTrocarSenhaLogin(usuarioDigitado){
 
 async function executarTrocaSenhaLogin(usuarioDigitado){
   const usuario=usuarioDigitado.trim().toLowerCase();
-  if(!usuario){alertaModal('Informe o usuário na tela de login antes de trocar a senha.');return;}
+  if(!usuario){alert('Informe o usuário na tela de login antes de trocar a senha.');return;}
   const users = await fbGet('users');
-  if(!users||!users[usuario]){alertaModal('Usuário não encontrado.');return;}
+  if(!users||!users[usuario]){alert('Usuário não encontrado.');return;}
   const user=users[usuario];
   const atual=document.getElementById('senhaAtual').value.trim();
   const nova1=document.getElementById('novaSenha1').value.trim();
   const nova2=document.getElementById('novaSenha2').value.trim();
-  if(!atual||!nova1||!nova2){alertaModal('Preencha todos os campos de senha.');return;}
-  if(user.senha!==atual){alertaModal('Senha atual incorreta.');return;}
-  if(nova1!==nova2){alertaModal('Nova senha e confirmação não conferem.');return;}
+  if(!atual||!nova1||!nova2){alert('Preencha todos os campos de senha.');return;}
+  if(user.senha!==atual){alert('Senha atual incorreta.');return;}
+  if(nova1!==nova2){alert('Nova senha e confirmação não conferem.');return;}
   user.senha=nova1;
   await fbSet(`users/${usuario}`,user);
   fechaModal(true);
@@ -1119,7 +1123,6 @@ async function abreModalRegistrarPedido(){
       * Campos com <span class="text-orange-400">*</span> são obrigatórios.
     </div>
     <div class="flex justify-end gap-2 mt-2">
-      <button class="btn-ghost btn-rp-fechar">Fechar</button>
       <button class="btn btn-rp-salvar">Salvar pedido</button>
     </div>
   </div>`;
@@ -1130,7 +1133,6 @@ async function abreModalRegistrarPedido(){
   numeroInput.addEventListener('input',()=>{numeroInput.value=numeroInput.value.replace(/[^0-9]/g,'');});
   valorInput.addEventListener('input',()=>aplicarMascaraMoeda(valorInput));
   
-  document.querySelectorAll('.btn-rp-fechar').forEach(btn=>btn.addEventListener('click',()=>fechaModal(true)));
   document.querySelectorAll('.btn-rp-salvar').forEach(btn=>btn.addEventListener('click',()=>salvarNovoPedido()));
 }
 
@@ -1143,8 +1145,14 @@ async function salvarNovoPedido(){
   let obs=document.getElementById('rpObs').value;
   obs=capitalizarPrimeira(obs);
   
-  if(!numero||!cliente||!vendedor||!pagamento){alertaModal('Preencha número, cliente, vendedor e pagamento.');return;}
-  if(valor===0){alertaModal('Informe um valor maior que zero.');return;}
+  if(!numero||!cliente||!vendedor||!pagamento){
+    alert('Preencha número, cliente, vendedor e pagamento.');
+    return;
+  }
+  if(valor===0){
+    alert('Informe um valor maior que zero.');
+    return;
+  }
   
   const pedido={
     numero,
@@ -1288,16 +1296,15 @@ function abreModalAddUsuario(){
     </div>
   </div>`;
   abreModal('Adicionar Usuário',html);
-  document.querySelectorAll('.btn-add-user-cancelar').forEach(btn=>btn.addEventListener('click',()=>fechaModal(true)));
+  document.querySelectorAll('.btn-add-user-cancelar').forEach(btn=>btn.addEventListener('click',()=>abreModalConfiguracoes()));
   document.querySelectorAll('.btn-add-user-salvar').forEach(btn=>btn.addEventListener('click',async()=>{
     const usuario=document.getElementById('addUsuario').value.trim().toLowerCase();
     const nome=document.getElementById('addNomeUser').value.trim();
     const senha=document.getElementById('addSenha').value.trim();
     const perfil=document.getElementById('addPerfil').value;
-    if(!usuario||!nome||!senha){alertaModal('Preencha todos os campos.');return;}
+    if(!usuario||!nome||!senha){alert('Preencha todos os campos.');return;}
     await fbSet(`users/${usuario}`,{usuario,nome,senha,perfil});
-    fechaModal(true);
-    mostrarAbaConfig('usuarios');
+    abreModalConfiguracoes();
   }));
 }
 
@@ -1310,14 +1317,12 @@ function abreModalAddVendedor(){
     </div>
   </div>`;
   abreModal('Adicionar Vendedor',html);
-  document.querySelectorAll('.btn-add-vend-cancelar').forEach(btn=>btn.addEventListener('click',()=>fechaModal(true)));
+  document.querySelectorAll('.btn-add-vend-cancelar').forEach(btn=>btn.addEventListener('click',()=>abreModalConfiguracoes()));
   document.querySelectorAll('.btn-add-vend-salvar').forEach(btn=>btn.addEventListener('click',async()=>{
     const nome=document.getElementById('addNomeVend').value.trim();
-    if(!nome){alertaModal('Informe o nome.');return;}
+    if(!nome){alert('Informe o nome.');return;}
     await fbPush('vendedores',{nome});
-    fechaModal(true);
-    mostrarAbaConfig('vendedores');
-    carregaVendedoresSelects();
+    abreModalConfiguracoes();
   }));
 }
 
@@ -1330,13 +1335,12 @@ function abreModalAddEntregador(){
     </div>
   </div>`;
   abreModal('Adicionar Entregador',html);
-  document.querySelectorAll('.btn-add-ent-cancelar').forEach(btn=>btn.addEventListener('click',()=>fechaModal(true)));
+  document.querySelectorAll('.btn-add-ent-cancelar').forEach(btn=>btn.addEventListener('click',()=>abreModalConfiguracoes()));
   document.querySelectorAll('.btn-add-ent-salvar').forEach(btn=>btn.addEventListener('click',async()=>{
     const nome=document.getElementById('addNomeEnt').value.trim();
-    if(!nome){alertaModal('Informe o nome.');return;}
+    if(!nome){alert('Informe o nome.');return;}
     await fbPush('entregadores',{nome});
-    fechaModal(true);
-    mostrarAbaConfig('entregadores');
+    abreModalConfiguracoes();
   }));
 }
 
@@ -1349,13 +1353,12 @@ function abreModalAddPagamento(){
     </div>
   </div>`;
   abreModal('Adicionar Forma de Pagamento',html);
-  document.querySelectorAll('.btn-add-pag-cancelar').forEach(btn=>btn.addEventListener('click',()=>fechaModal(true)));
+  document.querySelectorAll('.btn-add-pag-cancelar').forEach(btn=>btn.addEventListener('click',()=>abreModalConfiguracoes()));
   document.querySelectorAll('.btn-add-pag-salvar').forEach(btn=>btn.addEventListener('click',async()=>{
     const nome=document.getElementById('addNomePag').value.trim();
-    if(!nome){alertaModal('Informe o nome.');return;}
+    if(!nome){alert('Informe o nome.');return;}
     await fbPush('pagamentos',{nome});
-    fechaModal(true);
-    mostrarAbaConfig('pagamentos');
+    abreModalConfiguracoes();
   }));
 }
 
@@ -1429,7 +1432,6 @@ async function exportarHistoricoCSV(){
   const periodo=getPeriodoTexto();
   const lista=Object.values(pedidos);
   
-  // Calcular totais
   const rota=lista.filter(p=>p.status==='rota').length;
   const fin=lista.filter(p=>p.status==='finalizada'&&p.conforme).length;
   const nc=lista.filter(p=>p.teveNC).length;
@@ -1471,7 +1473,7 @@ function imprimirDashboard(){
   window.print();
 }
 
-// ===== LOGIN =====
+// ===== LOGIN & EVENTOS =====
 window.addEventListener('DOMContentLoaded',async()=>{
   await ensureInit();
   
@@ -1481,6 +1483,10 @@ window.addEventListener('DOMContentLoaded',async()=>{
   const btnChangePass=document.getElementById('btnChangePass');
   const togglePass=document.getElementById('toggleLoginPass');
   const loginMsg=document.getElementById('loginMsg');
+  const quickActionsCard=document.getElementById('quickActionsCard');
+  const btnConfig=document.getElementById('btnConfig');
+  const btnResetDay=document.getElementById('btnResetDay');
+  const btnResetHistory=document.getElementById('btnResetHistory');
   
   togglePass.addEventListener('click',()=>{
     if(inputPass.type==='password'){inputPass.type='text';togglePass.textContent='Ocultar';}
@@ -1508,8 +1514,6 @@ window.addEventListener('DOMContentLoaded',async()=>{
   }
   
   btnLogin.addEventListener('click',()=>executarLogin());
-  
-  // ENTER para login
   inputUser.addEventListener('keypress',(e)=>{if(e.key==='Enter')executarLogin();});
   inputPass.addEventListener('keypress',(e)=>{if(e.key==='Enter')executarLogin();});
   
@@ -1525,9 +1529,19 @@ window.addEventListener('DOMContentLoaded',async()=>{
     document.getElementById('userInfo').textContent=`${currentUser.nome} (${currentUser.perfil})`;
     
     if(currentUser.perfil==='admin'){
-      document.getElementById('btnConfig').classList.remove('hidden');
-      document.getElementById('btnResetDay').classList.remove('hidden');
-      document.getElementById('btnResetHistory').classList.remove('hidden');
+      btnConfig.classList.remove('hidden');
+      btnResetDay.classList.remove('hidden');
+      btnResetHistory.classList.remove('hidden');
+      quickActionsCard.classList.remove('hidden');
+    }else{
+      btnConfig.classList.add('hidden');
+      btnResetDay.classList.add('hidden');
+      btnResetHistory.classList.add('hidden');
+      if(currentUser.perfil==='observador'){
+        quickActionsCard.classList.add('hidden');
+      }else{
+        quickActionsCard.classList.remove('hidden');
+      }
     }
     
     carregaVendedoresSelects();
@@ -1548,10 +1562,12 @@ window.addEventListener('DOMContentLoaded',async()=>{
   });
   
   document.getElementById('btnRefreshApp').addEventListener('click',()=>{
+    if(!currentUser)return;
     atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();
   });
   
   document.getElementById('btnRefreshHistory').addEventListener('click',()=>{
+    if(!currentUser)return;
     atualizaHistorico();
   });
   
@@ -1605,6 +1621,17 @@ window.addEventListener('DOMContentLoaded',async()=>{
       alertaModal('Todo o histórico foi removido com sucesso.');
     }, 'Isso vai apagar TODO o histórico de entregas. Confirma?');
   });
+  
+  // Atualização automática a cada 10 segundos
+  setInterval(()=>{
+    if(!currentUser)return;
+    atualizaDashboard();
+    atualizaCardsEntregadores();
+    atualizaListaPedidos();
+    if(!document.getElementById('historyView').classList.contains('hidden')){
+      atualizaHistorico();
+    }
+  },10000);
 });
 </script>
 </body>
