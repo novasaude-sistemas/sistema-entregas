@@ -299,7 +299,7 @@
     </div>
   </main>
 
-  <script>
+  <script type="module">
     let currentUser = null;
     let lastDashboardDay = new Date().toISOString().slice(0,10);
     let modalStackContent = null; // para manter conteúdo ao mostrar alertas sobrepostos
@@ -2129,9 +2129,7 @@ try {
       document.getElementById("historySeller").onchange=()=>atualizaHistorico();
       document.getElementById("historySearch").oninput=()=>atualizaHistorico();
     });
-  </script>
 <!-- ==== FIREBASE CONFIG START ==== -->
-<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import {
     getFirestore,
