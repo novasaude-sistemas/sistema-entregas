@@ -2269,6 +2269,8 @@ window.executarResetDia = executarResetDia
       atualizaListaPedidos();atualizaHistorico();
     }
 window.showApp = showApp
+let inputUser;
+let inputPass;
 window.addEventListener("DOMContentLoaded",async()=>{
   await ensureInit();
   await carregaVendedoresSelects();
@@ -2287,10 +2289,10 @@ window.addEventListener("DOMContentLoaded",async()=>{
   const btnResetHistory=document.getElementById("btnResetHistory");
   const btnResetDay=document.getElementById("btnResetDay");
 
-  const inputUser=document.getElementById("loginUser");
-  const inputPass=document.getElementById("loginPass");
-  const togglePass=document.getElementById("toggleLoginPass");
-  const loginMsg=document.getElementById("loginMsg");
+inputUser = document.getElementById("loginUser");
+inputPass = document.getElementById("loginPass");
+const togglePass=document.getElementById("toggleLoginPass");
+const loginMsg=document.getElementById("loginMsg");
 
   togglePass.addEventListener("click",()=>{
     if(inputPass.type==="password"){
