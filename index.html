@@ -389,17 +389,22 @@ window.idb = idb
       }
     }
 window.ensureInit = ensureInit
-    function abreModal(titulo,html){
-      const bg=document.getElementById("modalBg");
-      const cont=document.getElementById("modalCont");
-      cont.innerHTML=
-        `<div class="flex justify-between items-center mb-4">
-           <div class="font-semibold">${titulo}</div>
-           <button class="text-xs text-slate-400" onclick="fechaModal(true)">Fechar ✕</button>
-         </div>`+html;
-      bg.classList.remove("hidden");
-    }
-window.abreModal = abreModal
+    function abreModal(titulo, html){
+  const bg = document.getElementById("modalBg");
+  const cont = document.getElementById("modalCont");
+  cont.innerHTML =
+  `<div class="flex justify-between items-center mb-4">
+      <div class="font-semibold">${titulo}</div>
+      <button id="btnFecharModal" class="text-xs text-slate-400">Fechar ✕</button>
+   </div>` + html;
+  bg.classList.remove("hidden");
+
+  const btnFechar = document.getElementById("btnFecharModal");
+  if (btnFechar) {
+    btnFechar.addEventListener("click", () => fechaModal(true));
+  }
+}
+window.abreModal = abreModal;
     function fechaModal(resetStack=false){
       document.getElementById("modalBg").classList.add("hidden");
       document.getElementById("modalCont").innerHTML="";
@@ -407,20 +412,34 @@ window.abreModal = abreModal
     }
 window.fechaModal = fechaModal
     function alertaModal(msg, onClose){
-      const bg=document.getElementById("modalBg");
-      const cont=document.getElementById("modalCont");
-      // Guarda o conteúdo atual do modal (por exemplo, Registrar Pedido)
-      if(!modalStackContent) modalStackContent=cont.innerHTML;
-      cont.innerHTML=
-        `<div class="flex justify-between items-center mb-4">
-           <div class="font-semibold">Aviso</div>
-           <button class="text-xs text-slate-400" onclick="restaurarModalStack()">Fechar ✕</button>
-         </div>
-         <p class="mb-4 text-orange-300">${msg}</p>
-         <button class="btn w-full" onclick="restaurarModalStack();${onClose?onClose:""}">Fechar</button>`;
-      bg.classList.remove("hidden");
-    }
-window.alertaModal = alertaModal
+  const bg = document.getElementById("modalBg");
+  const cont = document.getElementById("modalCont");
+
+  // Guarda o conteúdo atual do modal (por exemplo, Registrar Pedido)
+  if (!modalStackContent) modalStackContent = cont.innerHTML;
+
+  cont.innerHTML =
+  `<div class="flex justify-between items-center mb-4">
+      <div class="font-semibold">Aviso</div>
+      <button id="btnFecharAlertaX" class="text-xs text-slate-400">Fechar ✕</button>
+   </div>
+   <p class="mb-4 text-orange-300">${msg}</p>
+   <button id="btnFecharAlerta" class="btn w-full">Fechar</button>`;
+
+  bg.classList.remove("hidden");
+
+  const btnX = document.getElementById("btnFecharAlertaX");
+  const btnFechar = document.getElementById("btnFecharAlerta");
+
+  const fechar = () => {
+    restaurarModalStack();
+    if (onClose) onClose();
+  };
+
+  if (btnX)      btnX.addEventListener("click", fechar);
+  if (btnFechar) btnFechar.addEventListener("click", fechar);
+}
+window.alertaModal = alertaModal;
     function restaurarModalStack(){
       if(!modalStackContent){fechaModal(true);return;}
       const cont=document.getElementById("modalCont");
@@ -592,7 +611,7 @@ window.linhaEntregadorSaida = linhaEntregadorSaida
         );
       }
 window.atualizaListaPedidos = atualizaListaPedidos
-      const corStatus=p=>{
+            const corStatus=p=>{
         if(p.status==="separacao")return"badge badge-blue";
         if(p.status==="rota")return"badge badge-orange";
         if(p.status==="finalizada" && p.conforme)return"badge badge-green";
@@ -622,8 +641,7 @@ window.atualizaListaPedidos = atualizaListaPedidos
         const obsTxt=p.observacoes?` • Obs: ${p.observacoes}`:"";
         html+=`
           <div class="border border-slate-700 rounded-md px-3 py-2 flex justify-between items-center ${linhaClasse}">
-            <div class="text-left flex-1 text-xs"
-                 onclick="abrirDetalhesEntrega('${p.id}')">
+            <div class="text-left flex-1 text-xs item-detalhe" data-id="${p.id}">
               <div class="font-semibold text-slate-100">
                 ${p.numero} • ${p.cliente}
               </div>
@@ -641,18 +659,41 @@ window.atualizaListaPedidos = atualizaListaPedidos
               </div>
             </div>
             <div class="flex flex-col gap-1 ml-2">
-              <button class="btn-small btn-ghost" ${podeEditar?"":"disabled"}
-                      onclick="event.stopPropagation();abrirAcoesEntrega('${p.id}')">Ações</button>
-              <button class="btn-small btn-ghost text-red-400 border-red-500"
-                      ${podeEditar?"":"disabled"}
-                      onclick="event.stopPropagation();excluirPedido('${p.id}')">Excluir</button>
+              <button class="btn-small btn-ghost btn-acoes"
+                      data-id="${p.id}" ${podeEditar?"":"disabled"}>
+                Ações
+              </button>
+              <button class="btn-small btn-ghost text-red-400 border-red-500 btn-excluir"
+                      data-id="${p.id}" ${podeEditar?"":"disabled"}>
+                Excluir
+              </button>
             </div>
           </div>`;
       });
-      document.getElementById("listaPedidos").innerHTML=
+      const listaEl=document.getElementById("listaPedidos");
+      listaEl.innerHTML=
         html||`<p class="text-xs text-slate-300">
           Nenhuma entrega para hoje.
         </p>`;
+
+      // eventos
+      listaEl.querySelectorAll(".item-detalhe").forEach(el=>{
+        el.addEventListener("click",()=>{
+          abrirDetalhesEntrega(el.dataset.id);
+        });
+      });
+      listaEl.querySelectorAll(".btn-acoes").forEach(btn=>{
+        btn.addEventListener("click",ev=>{
+          ev.stopPropagation();
+          abrirAcoesEntrega(btn.dataset.id);
+        });
+      });
+      listaEl.querySelectorAll(".btn-excluir").forEach(btn=>{
+        btn.addEventListener("click",ev=>{
+          ev.stopPropagation();
+          excluirPedido(btn.dataset.id);
+        });
+      });
     }
 
     async function excluirPedido(id){
@@ -774,34 +815,27 @@ window.atualizaHistorico = atualizaHistorico
         };
         const obsTxt=p.observacoes?` • Obs: ${p.observacoes}`:"";
         html+=`
-          <div class="border border-slate-700 rounded-md px-3 py-2 flex justify-between items-center ${linhaClasse}">
-            <div class="text-left flex-1"
-                 onclick="abrirDetalhesEntrega('${p.id}')">
-              <div class="font-semibold text-slate-100">
-                ${p.numero} • ${p.cliente}
-                <span class="text-slate-400">(${p.vendedor})</span>
-              </div>
-              <div class="text-slate-300 text-xs">
-                ${new Date(p.dataEntrada).toLocaleString("pt-BR")} •
-                R$ ${p.valor.toFixed(2)} • ${p.pagamento||""}${obsTxt}
-              </div>
-              ${linhaEntregadorSaida(p)}
-              <div class="mt-1 text-xs">
-                ${eStatus()}
-              </div>
-            </div>
-            <div class="flex flex-col gap-1 ml-2">
-              <button class="btn-small btn-ghost" ${podeEditar?"":"disabled"}
-                      onclick="event.stopPropagation();abrirAcoesEntrega('${p.id}')">Ações</button>
-              <button class="btn-small btn-ghost text-red-400 border-red-500" ${podeEditar?"":"disabled"}
-                      onclick="event.stopPropagation();abrirExcluirComSenha('${p.id}')">Excluir</button>
-            </div>
-          </div>`;
+  <div class="border border-slate-700 rounded-md px-3 py-2 flex justify-between items-center ${linhaClasse}">
+    <div class="text-left flex-1 item-detalhe" data-id="${p.id}">
+      <div class="font-semibold text-slate-100">
+        ${p.numero} • ${p.cliente}
+      </div>
+      <span class="text-slate-400">${p.vendedor}</span>
+      ...
+    </div>
+    ...
+  </div>`;
       });
       document.getElementById("historyList").innerHTML=
         html||`<p class="text-xs text-slate-300">
           Nenhum registro encontrado.
         </p>`;
+const histEl = document.getElementById("historyList");
+histEl.querySelectorAll(".item-detalhe").forEach(el=>{
+  el.addEventListener("click",()=>{
+    abrirDetalhesEntrega(el.dataset.id);
+  });
+});
     }
 
     function limparFiltrosHistorico(){
@@ -868,7 +902,7 @@ window.abrirDetalhesEntrega = abrirDetalhesEntrega
         </div>`;
       }
 window.abrirAcoesEntrega = abrirAcoesEntrega
-      let botoesSaida="";
+            let botoesSaida="";
       let blocoResultado="";
 
       if(!soLeitura){
@@ -882,66 +916,82 @@ window.abrirAcoesEntrega = abrirAcoesEntrega
                 ${selEnt}
               </select>
             </div>
-            <button class="btn mt-3" onclick="confirmarSaida('${p.id}')">Confirmar Saída</button>`;
+            <button class="btn mt-3 btn-confirmar-saida" data-id="${p.id}">
+              Confirmar Saída
+            </button>`;
         }else{
           if(p.saida){
             botoesSaida=`
               ${saidaInfo}
               <div class="mt-3 flex gap-2">
-                <button class="btn-ghost" onclick="desfazerSaida('${p.id}')">
+                <button class="btn-ghost btn-desfazer-saida" data-id="${p.id}">
                   Desfazer Saída
                 </button>
               </div>`;
           }
         }
+      }
 
-        if(p.status==="rota"){
-          blocoResultado=`
-            <div class="mt-4 space-y-2">
-              <div class="small font-semibold">Finalizar Entrega</div>
-              <div class="flex gap-2">
-                <button class="btn bg-emerald-600"
-                        onclick="finalizarEntregaConforme('${p.id}')">Conforme</button>
-                <button class="btn bg-red-600"
-                        onclick="abrirNaoConforme('${p.id}')">Não Conforme</button>
-              </div>
-            </div>`;
-        }else if(p.status==="nao-conforme"){
-          blocoResultado=`
-            <div class="mt-4 space-y-2">
-              <div class="small font-semibold">Entrega Não Conforme</div>
-              <button class="btn-ghost"
-                      onclick="abrirRegistrarAndamento('${p.id}')">
-                Registrar andamento
+      if(p.status==="rota"){
+        blocoResultado=`
+          <div class="mt-4 space-y-2">
+            <div class="small font-semibold">Finalizar Entrega</div>
+            <div class="flex gap-2">
+              <button class="btn bg-emerald-600 btn-finalizar-conforme" data-id="${p.id}">
+                Conforme
               </button>
-            </div>`;
-        }else if(p.status==="finalizada"){
-          blocoResultado=`
-            <div class="mt-4 space-y-2">
-              <div class="small font-semibold">Entrega Finalizada</div>
-              <button class="btn-ghost"
-                      onclick="desfazerFinalizacao('${p.id}')">
-                Desfazer Finalização
+              <button class="btn bg-red-600 btn-abrir-nc" data-id="${p.id}">
+                Não Conforme
               </button>
-            </div>`;
-        }
+            </div>
+          </div>`;
+      }else if(p.status==="nao-conforme"){
+        blocoResultado=`
+          <div class="mt-4 space-y-2">
+            <div class="small font-semibold">Entrega Não Conforme</div>
+            <button class="btn-ghost btn-registrar-andamento" data-id="${p.id}">
+              Registrar andamento
+            </button>
+          </div>`;
+      }else if(p.status==="finalizada"){
+        blocoResultado=`
+          <div class="mt-4 space-y-2">
+            <div class="small font-semibold">Entrega Finalizada</div>
+            <button class="btn-ghost btn-desfazer-finalizacao" data-id="${p.id}">
+              Desfazer Finalização
+            </button>
+          </div>`;
       }
 
       const html=`
-        <div class="text-xs space-y-2">
-          <div class="font-semibold text-base text-slate-100">
-            ${p.numero} • ${p.cliente}
-          </div>
-          <div>Status:
-            <span class="font-semibold">
-              ${p.status}${p.status==="finalizada"?(p.conforme?" (Conforme)":""):""}
-            </span>
-          </div>
-          ${saidaInfo}
-          ${botoesSaida}
-          ${blocoResultado}
-        </div>`;
-      abreModal("Ações da Entrega",html);
+  <div class="text-xs space-y-2">
+    ...
+    ${saidaInfo}
+    ${botoesSaida}
+    ${blocoResultado}
+  </div>`;
+abreModal("Ações da Entrega",html);
+
+document.querySelectorAll(".btn-finalizar-conforme").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    finalizarEntregaConforme(btn.dataset.id);
+  });
+});
+document.querySelectorAll(".btn-abrir-nc").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    abrirNaoConforme(btn.dataset.id);
+  });
+});
+document.querySelectorAll(".btn-registrar-andamento").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    abrirRegistrarAndamento(btn.dataset.id);
+  });
+});
+document.querySelectorAll(".btn-desfazer-finalizacao").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    desfazerFinalizacao(btn.dataset.id);
+  });
+});
     }
 
     async function confirmarSaida(id){
@@ -1004,21 +1054,33 @@ window.finalizarEntregaConforme = finalizarEntregaConforme
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
     }
 
-    async function abrirNaoConforme(id){
-      const html=`
-        <div class="space-y-3 text-xs">
-          <div class="small font-semibold">Justificativa do Não Conforme</div>
-          <textarea id="ncJust"
-                    class="border border-slate-700 rounded-md w-full px-2 py-1 h-24
-                           bg-slate-900 text-slate-100"></textarea>
-          <div class="flex gap-2 justify-end">
-            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
-            <button class="btn bg-red-600"
-                    onclick="salvarNaoConformeInicial('${id}')">Salvar Não Conforme</button>
-          </div>
-        </div>`;
-      abreModal("Registrar Não Conforme",html);
-    }
+  async function abrirNaoConforme(id){
+  const html=`
+    <div class="space-y-3 text-xs">
+      <div class="small font-semibold">Justificativa do Não Conforme</div>
+      <textarea id="ncJust"
+                class="border border-slate-700 rounded-md w-full px-2 py-1 h-24
+                       bg-slate-900 text-slate-100"></textarea>
+      <div class="flex gap-2 justify-end">
+        <button class="btn-ghost btn-nc-cancelar">Cancelar</button>
+        <button class="btn bg-red-600 btn-nc-salvar" data-id="${id}">
+          Salvar Não Conforme
+        </button>
+      </div>
+    </div>`;
+  abreModal("Registrar Não Conforme",html);
+
+  document.querySelectorAll(".btn-nc-cancelar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      fechaModal(true);
+    });
+  });
+  document.querySelectorAll(".btn-nc-salvar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      salvarNaoConformeInicial(btn.dataset.id);
+    });
+  });
+}
 window.abrirNaoConforme = abrirNaoConforme
     async function salvarNaoConformeInicial(id){
       let txt=document.getElementById("ncJust").value;
@@ -1050,26 +1112,35 @@ window.salvarNaoConformeInicial = salvarNaoConformeInicial
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
     }
 
-    async function abrirRegistrarAndamento(id){
-      const html=`
-        <div class="space-y-3 text-xs">
-          <div class="small font-semibold">Registrar andamento</div>
-          <textarea id="ncAnd"
-                    class="border border-slate-700 rounded-md w-full px-2 py-1 h-24
-                           bg-slate-900 text-slate-100"></textarea>
-          <div class="flex gap-2 justify-between flex-wrap">
-            <button class="btn bg-red-600 flex-1"
-                    onclick="salvarAndamentoNc('${id}','manter')">
-              Manter Não Conforme
-            </button>
-            <button class="btn bg-emerald-600 flex-1"
-                    onclick="salvarAndamentoNc('${id}','finalizar')">
-              Finalizar
-            </button>
-          </div>
-        </div>`;
-      abreModal("Registrar Andamento - Não Conforme",html);
-    }
+   async function abrirRegistrarAndamento(id){
+  const html=`
+    <div class="space-y-3 text-xs">
+      <div class="small font-semibold">Registrar andamento</div>
+      <textarea id="ncAnd"
+                class="border border-slate-700 rounded-md w-full px-2 py-1 h-24
+                       bg-slate-900 text-slate-100"></textarea>
+      <div class="flex gap-2 justify-between flex-wrap">
+        <button class="btn bg-red-600 flex-1 btn-andamento-manter" data-id="${id}">
+          Manter Não Conforme
+        </button>
+        <button class="btn bg-emerald-600 flex-1 btn-andamento-finalizar" data-id="${id}">
+          Finalizar
+        </button>
+      </div>
+    </div>`;
+  abreModal("Registrar Andamento - Não Conforme",html);
+
+  document.querySelectorAll(".btn-andamento-manter").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      salvarAndamentoNc(btn.dataset.id,"manter");
+    });
+  });
+  document.querySelectorAll(".btn-andamento-finalizar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      salvarAndamentoNc(btn.dataset.id,"finalizar");
+    });
+  });
+}
 window.abrirRegistrarAndamento = abrirRegistrarAndamento
     async function salvarAndamentoNc(id,acao){
       let txt=document.getElementById("ncAnd").value;
@@ -1122,36 +1193,47 @@ window.desfazerFinalizacao = desfazerFinalizacao
     }
 
     function abreModalTrocarSenhaLogin(usuarioDigitado){
-      const html=`
-        <div class="text-xs space-y-3">
-          <div>Usuário: <b>${usuarioDigitado||"(não informado)"}</b></div>
-          <div>
-            <label class="small required block mb-1">Senha atual</label>
-            <input id="senhaAtual" type="password"
-                   class="border border-slate-700 w-full rounded-md px-2 py-1
-                          bg-slate-900 text-slate-100" />
-          </div>
-          <div>
-            <label class="small required block mb-1">Nova senha</label>
-            <input id="novaSenha1" type="password"
-                   class="border border-slate-700 w-full rounded-md px-2 py-1
-                          bg-slate-900 text-slate-100" />
-          </div>
-          <div>
-            <label class="small required block mb-1">Confirmar nova senha</label>
-            <input id="novaSenha2" type="password"
-                   class="border border-slate-700 w-full rounded-md px-2 py-1
-                          bg-slate-900 text-slate-100" />
-          </div>
-          <div class="flex justify-end gap-2 mt-2">
-            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
-            <button class="btn" onclick="executarTrocaSenhaLogin('${usuarioDigitado||""}')">
-              Salvar
-            </button>
-          </div>
-        </div>`;
-      abreModal("Trocar Senha",html);
-    }
+  const html=`
+    <div class="text-xs space-y-3">
+      <div>Usuário: <b>${usuarioDigitado||"(não informado)"}</b></div>
+      <div>
+        <label class="small required block mb-1">Senha atual</label>
+        <input id="senhaAtual" type="password"
+               class="border border-slate-700 w-full rounded-md px-2 py-1
+                      bg-slate-900 text-slate-100" />
+      </div>
+      <div>
+        <label class="small required block mb-1">Nova senha</label>
+        <input id="novaSenha1" type="password"
+               class="border border-slate-700 w-full rounded-md px-2 py-1
+                      bg-slate-900 text-slate-100" />
+      </div>
+      <div>
+        <label class="small required block mb-1">Confirmar nova senha</label>
+        <input id="novaSenha2" type="password"
+               class="border border-slate-700 w-full rounded-md px-2 py-1
+                      bg-slate-900 text-slate-100" />
+      </div>
+      <div class="flex justify-end gap-2 mt-2">
+        <button class="btn-ghost btn-troca-cancelar">Cancelar</button>
+        <button class="btn btn-troca-salvar" data-usuario="${usuarioDigitado||""}">
+          Salvar
+        </button>
+      </div>
+    </div>`;
+  abreModal("Trocar Senha",html);
+
+  document.querySelectorAll(".btn-troca-cancelar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      fechaModal(true);
+    });
+  });
+  document.querySelectorAll(".btn-troca-salvar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      executarTrocaSenhaLogin(btn.dataset.usuario);
+    });
+  });
+}
 window.abreModalTrocarSenhaLogin = abreModalTrocarSenhaLogin
     async function executarTrocaSenhaLogin(usuarioDigitado){
       const usuario=usuarioDigitado.trim().toLowerCase();
@@ -1178,37 +1260,48 @@ window.abreModalTrocarSenhaLogin = abreModalTrocarSenhaLogin
 window.executarTrocaSenhaLogin = executarTrocaSenhaLogin
 
     function abreModalTrocarSenhaInterno(){
-      if(!currentUser)return;
-      const html=`
-        <div class="text-xs space-y-3">
-          <div>Usuário: <b>${currentUser.usuario} (${currentUser.nome})</b></div>
-          <div>
-            <label class="small required block mb-1">Senha atual</label>
-            <input id="senhaAtualInt" type="password"
-                   class="border border-slate-700 w-full rounded-md px-2 py-1
-                          bg-slate-900 text-slate-100" />
-          </div>
-          <div>
-            <label class="small required block mb-1">Nova senha</label>
-            <input id="novaSenha1Int" type="password"
-                   class="border border-slate-700 w-full rounded-md px-2 py-1
-                          bg-slate-900 text-slate-100" />
-          </div>
-          <div>
-            <label class="small required block mb-1">Confirmar nova senha</label>
-            <input id="novaSenha2Int" type="password"
-                   class="border border-slate-700 w-full rounded-md px-2 py-1
-                          bg-slate-900 text-slate-100" />
-          </div>
-          <div class="flex justify-end gap-2 mt-2">
-            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
-            <button class="btn" onclick="executarTrocaSenhaInterno()">
-              Salvar
-            </button>
-          </div>
-        </div>`;
-      abreModal("Trocar Senha",html);
-    }
+  if(!currentUser)return;
+  const html=`
+    <div class="text-xs space-y-3">
+      <div>Usuário: <b>${currentUser.usuario} (${currentUser.nome})</b></div>
+      <div>
+        <label class="small required block mb-1">Senha atual</label>
+        <input id="senhaAtualInt" type="password"
+               class="border border-slate-700 w-full rounded-md px-2 py-1
+                      bg-slate-900 text-slate-100" />
+      </div>
+      <div>
+        <label class="small required block mb-1">Nova senha</label>
+        <input id="novaSenha1Int" type="password"
+               class="border border-slate-700 w-full rounded-md px-2 py-1
+                      bg-slate-900 text-slate-100" />
+      </div>
+      <div>
+        <label class="small required block mb-1">Confirmar nova senha</label>
+        <input id="novaSenha2Int" type="password"
+               class="border border-slate-700 w-full rounded-md px-2 py-1
+                      bg-slate-900 text-slate-100" />
+      </div>
+      <div class="flex justify-end gap-2 mt-2">
+        <button class="btn-ghost btn-troca-int-cancelar">Cancelar</button>
+        <button class="btn btn-troca-int-salvar">
+          Salvar
+        </button>
+      </div>
+    </div>`;
+  abreModal("Trocar Senha",html);
+
+  document.querySelectorAll(".btn-troca-int-cancelar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      fechaModal(true);
+    });
+  });
+  document.querySelectorAll(".btn-troca-int-salvar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      executarTrocaSenhaInterno();
+    });
+  });
+}
 window.abreModalTrocarSenhaInterno = abreModalTrocarSenhaInterno
     async function executarTrocaSenhaInterno(){
       if(!currentUser)return;
@@ -1232,66 +1325,86 @@ window.abreModalTrocarSenhaInterno = abreModalTrocarSenhaInterno
 window.executarTrocaSenhaInterno = executarTrocaSenhaInterno
 
     async function abreModalRegistrarPedido(){
-      if(!currentUser || currentUser.perfil==="observador")return;
-      const vends=await idb(null,"vendedores","getAll")||[];
-      const pags=await idb(null,"pagamentos","getAll")||[];
-      const selVend=vends.map(v=>`<option value="${v.nome}">${v.nome}</option>`).join("");
-      const selPag=pags.map(p=>`<option value="${p.nome}">${p.nome}</option>`).join("");
-      const html=`
-        <div class="grid gap-3 text-xs">
-          <div>
-            <label class="small required block mb-1">Nº Pedido</label>
-            <input id="rpNumero"
-                   class="border border-slate-700 rounded-md px-2 py-1 w-full
-                          bg-slate-900 text-slate-100"
-                   oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
-          </div>
-          <div>
-            <label class="small required block mb-1">Vendedor</label>
-            <select id="rpVendedor"
-                    class="border border-slate-700 rounded-md px-2 py-1 w-full
-                           bg-slate-900 text-slate-100">
-              <option value="">Selecione...</option>${selVend}
-            </select>
-          </div>
-          <div>
-            <label class="small required block mb-1">Cliente</label>
-            <input id="rpCliente"
-                   style="text-transform:uppercase;"
-                   class="border border-slate-700 rounded-md px-2 py-1 w-full
-                          bg-slate-900 text-slate-100" />
-          </div>
-          <div>
-            <label class="small required block mb-1">Valor (R$)</label>
-            <input id="rpValor"
-                   class="border border-slate-700 rounded-md px-2 py-1 w-full
-                          bg-slate-900 text-slate-100"
-                   placeholder="0,00" oninput="aplicarMascaraMoeda(this)" />
-          </div>
-          <div>
-            <label class="small required block mb-1">Pagamento</label>
-            <select id="rpPagamento"
-                    class="border border-slate-700 rounded-md px-2 py-1 w-full
-                           bg-slate-900 text-slate-100">
-              <option value="">Selecione...</option>${selPag}
-            </select>
-          </div>
-          <div>
-            <label class="small block mb-1">Observações</label>
-            <textarea id="rpObs"
-                      class="border border-slate-700 rounded-md px-2 py-1 w-full h-16
-                             bg-slate-900 text-slate-100"></textarea>
-          </div>
-          <div class="text-xs text-slate-300 mt-2">
-            Campos com * são obrigatórios.
-          </div>
-          <div class="flex justify-end gap-2 mt-2">
-            <button class="btn-ghost" onclick="fechaModal(true)">Fechar</button>
-            <button class="btn" onclick="salvarNovoPedido()">Salvar pedido</button>
-          </div>
-        </div>`;
-      abreModal("Registrar Pedido",html);
-    }
+  if(!currentUser || currentUser.perfil==="observador")return;
+  const vends=await idb(null,"vendedores","getAll")||[];
+  const pags=await idb(null,"pagamentos","getAll")||[];
+  const selVend=vends.map(v=>`<option value="${v.nome}">${v.nome}</option>`).join("");
+  const selPag=pags.map(p=>`<option value="${p.nome}">${p.nome}</option>`).join("");
+  const html=`
+    <div class="grid gap-3 text-xs">
+      <div>
+        <label class="small required block mb-1">Nº Pedido</label>
+        <input id="rpNumero"
+               class="border border-slate-700 rounded-md px-2 py-1 w-full
+                      bg-slate-900 text-slate-100" />
+      </div>
+      <div>
+        <label class="small required block mb-1">Vendedor</label>
+        <select id="rpVendedor"
+                class="border border-slate-700 rounded-md px-2 py-1 w-full
+                       bg-slate-900 text-slate-100">
+          <option value="">Selecione...</option>${selVend}
+        </select>
+      </div>
+      <div>
+        <label class="small required block mb-1">Cliente</label>
+        <input id="rpCliente"
+               style="text-transform:uppercase;"
+               class="border border-slate-700 rounded-md px-2 py-1 w-full
+                      bg-slate-900 text-slate-100" />
+      </div>
+      <div>
+        <label class="small required block mb-1">Valor (R$)</label>
+        <input id="rpValor"
+               class="border border-slate-700 rounded-md px-2 py-1 w-full
+                      bg-slate-900 text-slate-100"
+               placeholder="0,00" />
+      </div>
+      <div>
+        <label class="small required block mb-1">Pagamento</label>
+        <select id="rpPagamento"
+                class="border border-slate-700 rounded-md px-2 py-1 w-full
+                       bg-slate-900 text-slate-100">
+          <option value="">Selecione...</option>${selPag}
+        </select>
+      </div>
+      <div>
+        <label class="small block mb-1">Observações</label>
+        <textarea id="rpObs"
+                  class="border border-slate-700 rounded-md px-2 py-1 w-full h-16
+                         bg-slate-900 text-slate-100"></textarea>
+      </div>
+      <div class="text-xs text-slate-300 mt-2">
+        Campos com * são obrigatórios.
+      </div>
+      <div class="flex justify-end gap-2 mt-2">
+        <button class="btn-ghost btn-rp-fechar">Fechar</button>
+        <button class="btn btn-rp-salvar">Salvar pedido</button>
+      </div>
+    </div>`;
+  abreModal("Registrar Pedido",html);
+
+  const numeroInput=document.getElementById("rpNumero");
+  const valorInput=document.getElementById("rpValor");
+
+  numeroInput.addEventListener("input",()=>{
+    numeroInput.value=numeroInput.value.replace(/[^0-9]/g,"");
+  });
+  valorInput.addEventListener("input",()=>{
+    aplicarMascaraMoeda(valorInput);
+  });
+
+  document.querySelectorAll(".btn-rp-fechar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      fechaModal(true);
+    });
+  });
+  document.querySelectorAll(".btn-rp-salvar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      salvarNovoPedido();
+    });
+  });
+}
 window.abreModalRegistrarPedido = abreModalRegistrarPedido
     async function salvarNovoPedido(){
       const numero=document.getElementById("rpNumero").value.trim();
@@ -1343,118 +1456,165 @@ try {
     }
 
     async function abreModalConfiguracoes(){
-      if(!currentUser || currentUser.perfil!=="admin"){return;}
-      const html=`
-        <div class="flex gap-6 text-xs">
-          <div class="w-32 space-y-2 font-semibold">
-            <button class="block text-left w-full"
-                    onclick="mostrarAbaConfig('usuarios')">Usuários</button>
-            <button class="block text-left w-full"
-                    onclick="mostrarAbaConfig('vendedores')">Vendedores</button>
-            <button class="block text-left w-full"
-                    onclick="mostrarAbaConfig('entregadores')">Entregadores</button>
-            <button class="block text-left w-full"
-                    onclick="mostrarAbaConfig('pagamentos')">Formas de Pagamento</button>
-          </div>
-          <div class="flex-1" id="configContent"></div>
-        </div>
-        <div class="mt-4 text-right">
-          <button class="btn-ghost" onclick="fechaModal(true)">Fechar</button>
-        </div>`;
-      abreModal("Configurações",html);
-      mostrarAbaConfig('usuarios');
-    }
+  if(!currentUser || currentUser.perfil!=="admin"){return;}
+  const html=`
+    <div class="flex gap-6 text-xs">
+      <div class="w-32 space-y-2 font-semibold">
+        <button class="block text-left w-full btn-config-aba" data-aba="usuarios">
+          Usuários
+        </button>
+        <button class="block text-left w-full btn-config-aba" data-aba="vendedores">
+          Vendedores
+        </button>
+        <button class="block text-left w-full btn-config-aba" data-aba="entregadores">
+          Entregadores
+        </button>
+        <button class="block text-left w-full btn-config-aba" data-aba="pagamentos">
+          Formas de Pagamento
+        </button>
+      </div>
+      <div class="flex-1" id="configContent"></div>
+    </div>
+    <div class="mt-4 text-right">
+      <button class="btn-ghost btn-config-fechar">Fechar</button>
+    </div>`;
+  abreModal("Configurações",html);
+
+  document.querySelectorAll(".btn-config-aba").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      mostrarAbaConfig(btn.dataset.aba);
+    });
+  });
+  document.querySelectorAll(".btn-config-fechar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      fechaModal(true);
+    });
+  });
+
+  mostrarAbaConfig("usuarios");
+}
 window.abreModalConfiguracoes = abreModalConfiguracoes
 
     async function mostrarAbaConfig(aba){
-      const cont=document.getElementById("configContent");
-      if(aba==="usuarios"){
-        const users=await idb(null,"users","getAll")||[];
-        let lista=users.map(u=>
-          `<div class='flex items-center gap-2 mb-1'>
-             <span>${u.nome} (${u.usuario}) - ${u.perfil}</span>
-             ${u.usuario!=="admin"?
-               `<button class='btn-small btn-ghost'
-                        onclick="excluirUsuario('${u.usuario}')">Excluir</button>`:""}
-           </div>`).join("");
-        if(!lista)lista="<div class='text-slate-400'>Sem usuários.</div>";
-        cont.innerHTML=`
-          <div class="font-semibold mb-2">Usuários</div>
-          ${lista}
-          <div class="mt-3 grid grid-cols-4 gap-2">
-            <input id="cfgUserNome" placeholder="Nome"
-                   class="border border-slate-700 rounded-md px-2 py-1 bg-slate-900 text-slate-100" />
-            <input id="cfgUserLogin" placeholder="Usuário"
-                   class="border border-slate-700 rounded-md px-2 py-1 bg-slate-900 text-slate-100" />
-            <input id="cfgUserSenha" placeholder="Senha" type="password"
-                   class="border border-slate-700 rounded-md px-2 py-1 bg-slate-900 text-slate-100" />
-            <select id="cfgUserPerfil"
-                    class="border border-slate-700 rounded-md px-2 py-1 bg-slate-900 text-slate-100">
-              <option value="admin">admin</option>
-              <option value="operador">operador</option>
-              <option value="observador">observador</option>
-            </select>
-          </div>
-          <button class="btn mt-3" onclick="adicionarUsuario()">Adicionar</button>`;
-      }else if(aba==="vendedores"){
-        const vends=await idb(null,"vendedores","getAll")||[];
-        let lista=vends.map(v=>
-          `<div class='flex items-center gap-2 mb-1'>
-             <span>${v.nome}</span>
-             <button class='btn-small btn-ghost'
-                     onclick="excluirCadastro('vendedores','${v.id}')">Excluir</button>
-           </div>`).join("");
-        if(!lista)lista="<div class='text-slate-400'>Sem vendedores.</div>";
-        cont.innerHTML=`
-          <div class="font-semibold mb-2">Vendedores</div>
-          ${lista}
-          <div class="mt-3 flex gap-2">
-            <input id="cfgVendNome" placeholder="Novo vendedor"
-                   class="border border-slate-700 rounded-md px-2 py-1 flex-1 bg-slate-900 text-slate-100" />
-            <button class="btn" onclick="adicionarCadastro('vendedores','cfgVendNome')">
-              Adicionar
-            </button>
-          </div>`;
-      }else if(aba==="entregadores"){
-        const ents=await idb(null,"entregadores","getAll")||[];
-        let lista=ents.map(e=>
-          `<div class='flex items-center gap-2 mb-1'>
-             <span>${e.nome}</span>
-             <button class='btn-small btn-ghost'
-                     onclick="excluirCadastro('entregadores','${e.id}')">Excluir</button>
-           </div>`).join("");
-        if(!lista)lista="<div class='text-slate-400'>Sem entregadores.</div>";
-        cont.innerHTML=`
-          <div class="font-semibold mb-2">Entregadores</div>
-          ${lista}
-          <div class="mt-3 flex gap-2">
-            <input id="cfgEntNome" placeholder="Novo entregador"
-                   class="border border-slate-700 rounded-md px-2 py-1 flex-1 bg-slate-900 text-slate-100" />
-            <button class="btn" onclick="adicionarCadastro('entregadores','cfgEntNome')">
-              Adicionar
-            </button>
-          </div>`;
-      }else if(aba==="pagamentos"){
-        const pags=await idb(null,"pagamentos","getAll")||[];
-        let lista=pags.map(p=>
-          `<div class='flex items-center gap-2 mb-1'>
-             <span>${p.nome}</span>
-             <button class='btn-small btn-ghost'
-                     onclick="excluirCadastro('pagamentos','${p.id}')">Excluir</button>
-           </div>`).join("");
-        if(!lista)lista="<div class='text-slate-400'>Sem formas de pagamento.</div>";
-        cont.innerHTML=`
-          <div class="font-semibold mb-2">Formas de Pagamento</div>
-          ${lista}
-          <div class="mt-3 flex gap-2">
-            <input id="cfgPagNome" placeholder="Nova forma"
-                   class="border border-slate-700 rounded-md px-2 py-1 flex-1 bg-slate-900 text-slate-100" />
-            <button class="btn" onclick="adicionarCadastro('pagamentos','cfgPagNome')">
-              Adicionar
-            </button>
-          </div>`;
-      }
-    }
+  const cont=document.getElementById("configContent");
+  if(aba==="usuarios"){
+    const users=await idb(null,"users","getAll")||[];
+    let lista=users.map(u=>
+      `<div class='flex items-center gap-2 mb-1'>
+         <span>${u.nome} (${u.usuario}) - ${u.perfil}</span>
+         ${u.usuario!=="admin"?
+           `<button class='btn-small btn-ghost btn-excluir-usuario' data-usuario='${u.usuario}'>Excluir</button>`:""}
+       </div>`).join("");
+    if(!lista)lista="<div class='text-slate-400'>Sem usuários.</div>";
+    cont.innerHTML=`
+      <div class="font-semibold mb-2">Usuários</div>
+      ${lista}
+      <div class="mt-3 grid grid-cols-4 gap-2">
+        <input id="cfgUserNome" placeholder="Nome"
+               class="border border-slate-700 rounded-md px-2 py-1 bg-slate-900 text-slate-100" />
+        <input id="cfgUserLogin" placeholder="Usuário"
+               class="border border-slate-700 rounded-md px-2 py-1 bg-slate-900 text-slate-100" />
+        <input id="cfgUserSenha" placeholder="Senha" type="password"
+               class="border border-slate-700 rounded-md px-2 py-1 bg-slate-900 text-slate-100" />
+        <select id="cfgUserPerfil"
+                class="border border-slate-700 rounded-md px-2 py-1 bg-slate-900 text-slate-100">
+          <option value="admin">admin</option>
+          <option value="operador">operador</option>
+          <option value="observador">observador</option>
+        </select>
+      </div>
+      <button class="btn mt-3 btn-add-usuario">Adicionar</button>`;
+    cont.querySelectorAll(".btn-excluir-usuario").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        excluirUsuario(btn.dataset.usuario);
+      });
+    });
+    cont.querySelector(".btn-add-usuario").addEventListener("click",()=>{
+      adicionarUsuario();
+    });
+
+  }else if(aba==="vendedores"){
+    const vends=await idb(null,"vendedores","getAll")||[];
+    let lista=vends.map(v=>
+      `<div class='flex items-center gap-2 mb-1'>
+         <span>${v.nome}</span>
+         <button class='btn-small btn-ghost btn-excluir-vend' data-id='${v.id}'>Excluir</button>
+       </div>`).join("");
+    if(!lista)lista="<div class='text-slate-400'>Sem vendedores.</div>";
+    cont.innerHTML=`
+      <div class="font-semibold mb-2">Vendedores</div>
+      ${lista}
+      <div class="mt-3 flex gap-2">
+        <input id="cfgVendNome" placeholder="Novo vendedor"
+               class="border border-slate-700 rounded-md px-2 py-1 flex-1 bg-slate-900 text-slate-100" />
+        <button class="btn btn-add-vend">
+          Adicionar
+        </button>
+      </div>`;
+    cont.querySelectorAll(".btn-excluir-vend").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        excluirCadastro("vendedores",btn.dataset.id);
+      });
+    });
+    cont.querySelector(".btn-add-vend").addEventListener("click",()=>{
+      adicionarCadastro("vendedores","cfgVendNome");
+    });
+
+  }else if(aba==="entregadores"){
+    const ents=await idb(null,"entregadores","getAll")||[];
+    let lista=ents.map(e=>
+      `<div class='flex items-center gap-2 mb-1'>
+         <span>${e.nome}</span>
+         <button class='btn-small btn-ghost btn-excluir-ent' data-id='${e.id}'>Excluir</button>
+       </div>`).join("");
+    if(!lista)lista="<div class='text-slate-400'>Sem entregadores.</div>";
+    cont.innerHTML=`
+      <div class="font-semibold mb-2">Entregadores</div>
+      ${lista}
+      <div class="mt-3 flex gap-2">
+        <input id="cfgEntNome" placeholder="Novo entregador"
+               class="border border-slate-700 rounded-md px-2 py-1 flex-1 bg-slate-900 text-slate-100" />
+        <button class="btn btn-add-ent">
+          Adicionar
+        </button>
+      </div>`;
+    cont.querySelectorAll(".btn-excluir-ent").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        excluirCadastro("entregadores",btn.dataset.id);
+      });
+    });
+    cont.querySelector(".btn-add-ent").addEventListener("click",()=>{
+      adicionarCadastro("entregadores","cfgEntNome");
+    });
+
+  }else if(aba==="pagamentos"){
+    const pags=await idb(null,"pagamentos","getAll")||[];
+    let lista=pags.map(p=>
+      `<div class='flex items-center gap-2 mb-1'>
+         <span>${p.nome}</span>
+         <button class='btn-small btn-ghost btn-excluir-pag' data-id='${p.id}'>Excluir</button>
+       </div>`).join("");
+    if(!lista)lista="<div class='text-slate-400'>Sem formas de pagamento.</div>";
+    cont.innerHTML=`
+      <div class="font-semibold mb-2">Formas de Pagamento</div>
+      ${lista}
+      <div class="mt-3 flex gap-2">
+        <input id="cfgPagNome" placeholder="Nova forma"
+               class="border border-slate-700 rounded-md px-2 py-1 flex-1 bg-slate-900 text-slate-100" />
+        <button class="btn btn-add-pag">
+          Adicionar
+        </button>
+      </div>`;
+    cont.querySelectorAll(".btn-excluir-pag").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        excluirCadastro("pagamentos",btn.dataset.id);
+      });
+    });
+    cont.querySelector(".btn-add-pag").addEventListener("click",()=>{
+      adicionarCadastro("pagamentos","cfgPagNome");
+    });
+  }
+}
 window.mostrarAbaConfig = mostrarAbaConfig
     async function adicionarUsuario(){
       const nome=document.getElementById("cfgUserNome").value.trim();
@@ -1841,30 +2001,42 @@ window.excluirCadastro = excluirCadastro
     }
 
     function abrirExcluirComSenha(idPedido){
-      const html=`
-        <div class="text-xs space-y-3">
-          <div class="text-red-400 font-semibold mb-1">
-            Esta ação excluirá definitivamente a entrega selecionada.
-          </div>
-          <div>
-            <label class="small required block mb-1">Usuário admin</label>
-            <input id="exUser" class="border border-slate-700 rounded-md px-2 py-1 w-full
-                                     bg-slate-900 text-slate-100" />
-          </div>
-          <div>
-            <label class="small required block mb-1">Senha</label>
-            <input id="exPass" type="password"
-                   class="border border-slate-700 rounded-md px-2 py-1 w-full
-                          bg-slate-900 text-slate-100" />
-          </div>
-          <div class="flex justify-end gap-2 mt-2">
-            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
-            <button class="btn bg-red-600"
-                    onclick="confirmarExcluirComSenha('${idPedido}')">Excluir</button>
-          </div>
-        </div>`;
-      abreModal("Excluir Entrega",html);
-    }
+  const html=`
+    <div class="text-xs space-y-3">
+      <div class="text-red-400 font-semibold mb-1">
+        Esta ação excluirá definitivamente a entrega selecionada.
+      </div>
+      <div>
+        <label class="small required block mb-1">Usuário admin</label>
+        <input id="exUser" class="border border-slate-700 rounded-md px-2 py-1 w-full
+                                 bg-slate-900 text-slate-100" />
+      </div>
+      <div>
+        <label class="small required block mb-1">Senha</label>
+        <input id="exPass" type="password"
+               class="border border-slate-700 rounded-md px-2 py-1 w-full
+                      bg-slate-900 text-slate-100" />
+      </div>
+      <div class="flex justify-end gap-2 mt-2">
+        <button class="btn-ghost btn-exc-cancelar">Cancelar</button>
+        <button class="btn bg-red-600 btn-exc-confirmar" data-id="${idPedido}">
+          Excluir
+        </button>
+      </div>
+    </div>`;
+  abreModal("Excluir Entrega",html);
+
+  document.querySelectorAll(".btn-exc-cancelar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      fechaModal(true);
+    });
+  });
+  document.querySelectorAll(".btn-exc-confirmar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      confirmarExcluirComSenha(btn.dataset.id);
+    });
+  });
+}
 window.abrirExcluirComSenha = abrirExcluirComSenha
     async function confirmarExcluirComSenha(idPedido){
       const u=document.getElementById("exUser").value.trim().toLowerCase();
@@ -1881,58 +2053,80 @@ window.abrirExcluirComSenha = abrirExcluirComSenha
     }
 window.confirmarExcluirComSenha = confirmarExcluirComSenha
     function abrirResetHistorico(){
-      const html=`
-        <div class="text-xs space-y-3">
-          <div class="small font-semibold mb-2 text-red-400">
-            Resetar Histórico - Autenticação
-          </div>
-          <div>
-            <label class="small required block mb-1">Usuário admin</label>
-            <input id="rhUser" class="border border-slate-700 rounded-md px-2 py-1 w-full
-                                    bg-slate-900 text-slate-100" />
-          </div>
-          <div>
-            <label class="small required block mb-1">Senha</label>
-            <input id="rhPass" type="password"
-                   class="border border-slate-700 rounded-md px-2 py-1 w-full
-                          bg-slate-900 text-slate-100" />
-          </div>
-          <div class="flex justify-end gap-2 mt-3">
-            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
-            <button class="btn bg-red-600" onclick="confirmarResetHistoricoAuth()">
-              Continuar
-            </button>
-          </div>
-        </div>`;
-      abreModal("Resetar Histórico",html);
-    }
+  const html=`
+    <div class="text-xs space-y-3">
+      <div class="small font-semibold mb-2 text-red-400">
+        Resetar Histórico - Autenticação
+      </div>
+      <div>
+        <label class="small required block mb-1">Usuário admin</label>
+        <input id="rhUser" class="border border-slate-700 rounded-md px-2 py-1 w-full
+                                bg-slate-900 text-slate-100" />
+      </div>
+      <div>
+        <label class="small required block mb-1">Senha</label>
+        <input id="rhPass" type="password"
+               class="border border-slate-700 rounded-md px-2 py-1 w-full
+                      bg-slate-900 text-slate-100" />
+      </div>
+      <div class="flex justify-end gap-2 mt-3">
+        <button class="btn-ghost btn-rh-cancelar">Cancelar</button>
+        <button class="btn bg-red-600 btn-rh-continuar">
+          Continuar
+        </button>
+      </div>
+    </div>`;
+  abreModal("Resetar Histórico",html);
+
+  document.querySelectorAll(".btn-rh-cancelar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      fechaModal(true);
+    });
+  });
+  document.querySelectorAll(".btn-rh-continuar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      confirmarResetHistoricoAuth();
+    });
+  });
+}
 window.abrirResetHistorico = abrirResetHistorico
     async function confirmarResetHistoricoAuth(){
-      const u=document.getElementById("rhUser").value.trim().toLowerCase();
-      const s=document.getElementById("rhPass").value.trim();
-      if(!u||!s){alertaModal("Informe usuário e senha.");return;}
-      const user=await idb(null,"users","get",u);
-      if(!user || user.senha!==s || user.perfil!=="admin"){
-        alertaModal("Usuário/senha inválidos ou usuário não é admin.");return;
-      }
-      const html=`
-        <div class="text-xs space-y-3">
-          <div class="text-red-400 font-semibold">
-            Todos os registros do histórico serão apagados.
-          </div>
-          <p>
-            Esta ação apagará definitivamente <b>todas</b> as entregas registradas,
-            tanto na tela inicial quanto no histórico. Esta ação não poderá ser desfeita.
-          </p>
-          <div class="flex justify-end gap-2 mt-3">
-            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
-            <button class="btn bg-red-600" onclick="executarResetHistorico()">
-              Confirmar
-            </button>
-          </div>
-        </div>`;
-      abreModal("Confirmar Reset do Histórico",html);
-    }
+  const u=document.getElementById("rhUser").value.trim().toLowerCase();
+  const s=document.getElementById("rhPass").value.trim();
+  if(!u||!s){alertaModal("Informe usuário e senha.");return;}
+  const user=await idb(null,"users","get",u);
+  if(!user || user.senha!==s || user.perfil!=="admin"){
+    alertaModal("Usuário/senha inválidos ou usuário não é admin.");return;
+  }
+  const html=`
+    <div class="text-xs space-y-3">
+      <div class="text-red-400 font-semibold">
+        Todos os registros do histórico serão apagados.
+      </div>
+      <p>
+        Esta ação apagará definitivamente <b>todas</b> as entregas registradas,
+        tanto na tela inicial quanto no histórico. Esta ação não poderá ser desfeita.
+      </p>
+      <div class="flex justify-end gap-2 mt-3">
+        <button class="btn-ghost btn-rh2-cancelar">Cancelar</button>
+        <button class="btn bg-red-600 btn-rh2-confirmar">
+          Confirmar
+        </button>
+      </div>
+    </div>`;
+  abreModal("Confirmar Reset do Histórico",html);
+
+  document.querySelectorAll(".btn-rh2-cancelar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      fechaModal(true);
+    });
+  });
+  document.querySelectorAll(".btn-rh2-confirmar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      executarResetHistorico();
+    });
+  });
+}
 window.confirmarResetHistoricoAuth = confirmarResetHistoricoAuth
         async function executarResetHistorico(){
       await idb(null,"pedidos","clear");
@@ -1942,59 +2136,81 @@ window.confirmarResetHistoricoAuth = confirmarResetHistoricoAuth
     }
 window.executarResetHistorico = executarResetHistorico
     function abrirResetDia(){
-      const html=`
-        <div class="text-xs space-y-3">
-          <div class="small font-semibold mb-2 text-red-400">
-            Resetar Dia Atual - Autenticação
-          </div>
-          <div>
-            <label class="small required block mb-1">Usuário admin</label>
-            <input id="rdUser" class="border border-slate-700 rounded-md px-2 py-1 w-full
-                                    bg-slate-900 text-slate-100" />
-          </div>
-          <div>
-            <label class="small required block mb-1">Senha</label>
-            <input id="rdPass" type="password"
-                   class="border border-slate-700 rounded-md px-2 py-1 w-full
-                          bg-slate-900 text-slate-100" />
-          </div>
-          <div class="flex justify-end gap-2 mt-3">
-            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
-            <button class="btn bg-red-600" onclick="confirmarResetDiaAuth()">
-              Continuar
-            </button>
-          </div>
-        </div>`;
-      abreModal("Resetar Dia Atual",html);
-    }
+  const html=`
+    <div class="text-xs space-y-3">
+      <div class="small font-semibold mb-2 text-red-400">
+        Resetar Dia Atual - Autenticação
+      </div>
+      <div>
+        <label class="small required block mb-1">Usuário admin</label>
+        <input id="rdUser" class="border border-slate-700 rounded-md px-2 py-1 w-full
+                                bg-slate-900 text-slate-100" />
+      </div>
+      <div>
+        <label class="small required block mb-1">Senha</label>
+        <input id="rdPass" type="password"
+               class="border border-slate-700 rounded-md px-2 py-1 w-full
+                      bg-slate-900 text-slate-100" />
+      </div>
+      <div class="flex justify-end gap-2 mt-3">
+        <button class="btn-ghost btn-rd-cancelar">Cancelar</button>
+        <button class="btn bg-red-600 btn-rd-continuar">
+          Continuar
+        </button>
+      </div>
+    </div>`;
+  abreModal("Resetar Dia Atual",html);
+
+  document.querySelectorAll(".btn-rd-cancelar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      fechaModal(true);
+    });
+  });
+  document.querySelectorAll(".btn-rd-continuar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      confirmarResetDiaAuth();
+    });
+  });
+}
 window.abrirResetDia = abrirResetDia
     async function confirmarResetDiaAuth(){
-      const u=document.getElementById("rdUser").value.trim().toLowerCase();
-      const s=document.getElementById("rdPass").value.trim();
-      if(!u||!s){alertaModal("Informe usuário e senha.");return;}
-      const user=await idb(null,"users","get",u);
-      if(!user || user.senha!==s || user.perfil!=="admin"){
-        alertaModal("Usuário/senha inválidos ou usuário não é admin.");return;
-      }
-      const html=`
-        <div class="text-xs space-y-3">
-          <div class="text-red-400 font-semibold">
-            Todas as entregas do dia atual serão apagadas.
-          </div>
-          <p>
-            Esta ação removerá definitivamente as entregas do <b>dia atual</b> da tela inicial
-            e também do histórico. Entregas de outros dias serão mantidas.
-            Esta ação não poderá ser desfeita.
-          </p>
-          <div class="flex justify-end gap-2 mt-3">
-            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
-            <button class="btn bg-red-600" onclick="executarResetDia()">
-              Confirmar
-            </button>
-          </div>
-        </div>`;
-      abreModal("Confirmar Reset do Dia",html);
-    }
+  const u=document.getElementById("rdUser").value.trim().toLowerCase();
+  const s=document.getElementById("rdPass").value.trim();
+  if(!u||!s){alertaModal("Informe usuário e senha.");return;}
+  const user=await idb(null,"users","get",u);
+  if(!user || user.senha!==s || user.perfil!=="admin"){
+    alertaModal("Usuário/senha inválidos ou usuário não é admin.");return;
+  }
+  const html=`
+    <div class="text-xs space-y-3">
+      <div class="text-red-400 font-semibold">
+        Todas as entregas do dia atual serão apagadas.
+      </div>
+      <p>
+        Esta ação removerá definitivamente as entregas do <b>dia atual</b> da tela inicial
+        e também do histórico. Entregas de outros dias serão mantidas.
+        Esta ação não poderá ser desfeita.
+      </p>
+      <div class="flex justify-end gap-2 mt-3">
+        <button class="btn-ghost btn-rd2-cancelar">Cancelar</button>
+        <button class="btn bg-red-600 btn-rd2-confirmar">
+          Confirmar
+        </button>
+      </div>
+    </div>`;
+  abreModal("Confirmar Reset do Dia",html);
+
+  document.querySelectorAll(".btn-rd2-cancelar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      fechaModal(true);
+    });
+  });
+  document.querySelectorAll(".btn-rd2-confirmar").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      executarResetDia();
+    });
+  });
+}
 window.confirmarResetDiaAuth = confirmarResetDiaAuth
     async function executarResetDia(){
       const pedidos=await idb(null,"pedidos","getAll")||[];
@@ -2035,38 +2251,39 @@ window.executarResetDia = executarResetDia
       atualizaListaPedidos();atualizaHistorico();
     }
 window.showApp = showApp
-    window.addEventListener("DOMContentLoaded",async()=>{
-      await ensureInit();
-      await carregaVendedoresSelects();
+window.addEventListener("DOMContentLoaded",async()=>{
+  await ensureInit();
+  await carregaVendedoresSelects();
 
-      const btnLogin=document.getElementById("btnLogin");
-      const btnHome=document.getElementById("btnHome");
-      const btnHistory=document.getElementById("btnHistory");
-      const btnConfig=document.getElementById("btnConfig");
-      const btnLogout=document.getElementById("btnLogout");
-      const btnChangePass=document.getElementById("btnChangePass");
-      const btnOpenReg=document.getElementById("btnOpenRegister");
-      const btnExport=document.getElementById("btnExport");
-      const btnPrint=document.getElementById("btnPrint");
-      const btnBack=document.getElementById("btnBack");
-      const btnClearFilters=document.getElementById("btnClearFilters");
-      const btnResetHistory=document.getElementById("btnResetHistory");
-      const btnResetDay=document.getElementById("btnResetDay");
+  const btnLogin=document.getElementById("btnLogin");
+  const btnHome=document.getElementById("btnHome");
+  const btnHistory=document.getElementById("btnHistory");
+  const btnConfig=document.getElementById("btnConfig");
+  const btnLogout=document.getElementById("btnLogout");
+  const btnChangePass=document.getElementById("btnChangePass");
+  const btnOpenReg=document.getElementById("btnOpenRegister");
+  const btnExport=document.getElementById("btnExport");
+  const btnPrint=document.getElementById("btnPrint");
+  const btnBack=document.getElementById("btnBack");
+  const btnClearFilters=document.getElementById("btnClearFilters");
+  const btnResetHistory=document.getElementById("btnResetHistory");
+  const btnResetDay=document.getElementById("btnResetDay");
 
-      const inputUser=document.getElementById("loginUser");
-      const inputPass=document.getElementById("loginPass");
-      const togglePass=document.getElementById("toggleLoginPass");
-      const loginMsg=document.getElementById("loginMsg");
+  const inputUser=document.getElementById("loginUser");
+  const inputPass=document.getElementById("loginPass");
+  const togglePass=document.getElementById("toggleLoginPass");
+  const loginMsg=document.getElementById("loginMsg");
 
-      togglePass.onclick=()=>{
-        if(inputPass.type==="password"){
-          inputPass.type="text";
-          togglePass.textContent="Ocultar";
-        }else{
-          inputPass.type="password";
-          togglePass.textContent="Mostrar";
-        }
-      };
+  togglePass.addEventListener("click",()=>{
+    if(inputPass.type==="password"){
+      inputPass.type="text";
+      togglePass.textContent="Ocultar";
+    }else{
+      inputPass.type="password";
+      togglePass.textContent="Mostrar";
+    }
+  });
+});
 
       async function executarLogin(){
         const u=inputUser.value.trim().toLowerCase();
@@ -2085,70 +2302,80 @@ window.showApp = showApp
         showApp();
       }
 window.executarLogin = executarLogin
-      btnLogin.onclick=executarLogin;
-      inputUser.addEventListener("keydown",e=>{
-        if(e.key==="Enter"){e.preventDefault();executarLogin();}
-      });
-      inputPass.addEventListener("keydown",e=>{
-        if(e.key==="Enter"){e.preventDefault();executarLogin();}
-      });
+        btnLogin.addEventListener("click",executarLogin);
+  inputUser.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){e.preventDefault();executarLogin();}
+  });
+  inputPass.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){e.preventDefault();executarLogin();}
+  });
 
-      btnLogout.onclick=()=>{
-        currentUser=null;
-        document.getElementById("appView").classList.add("hidden");
-        document.getElementById("historyView").classList.add("hidden");
-        document.getElementById("loginView").classList.remove("hidden");
-        inputPass.value="";
-        document.getElementById("userInfo").textContent="";
-      };
+  btnLogout.addEventListener("click",()=>{
+    currentUser=null;
+    document.getElementById("appView").classList.add("hidden");
+    document.getElementById("historyView").classList.add("hidden");
+    document.getElementById("loginView").classList.remove("hidden");
+    inputPass.value="";
+    document.getElementById("userInfo").textContent="";
+  });
 
-      btnHistory.onclick=()=>{
-        atualizaHistorico();
-        document.getElementById("appView").classList.add("hidden");
-        document.getElementById("historyView").classList.remove("hidden");
-        btnHome.classList.remove("hidden");
-      };
+  btnHistory.addEventListener("click",()=>{
+    atualizaHistorico();
+    document.getElementById("appView").classList.add("hidden");
+    document.getElementById("historyView").classList.remove("hidden");
+    btnHome.classList.remove("hidden");
+  });
 
-      btnHome.onclick=()=>{
-        document.getElementById("historyView").classList.add("hidden");
-        document.getElementById("appView").classList.remove("hidden");
-        btnHome.classList.add("hidden");
-      };
+  btnHome.addEventListener("click",()=>{
+    document.getElementById("historyView").classList.add("hidden");
+    document.getElementById("appView").classList.remove("hidden");
+    btnHome.classList.add("hidden");
+  });
 
-      btnConfig.onclick=()=>abreModalConfiguracoes();
+  btnConfig.addEventListener("click",()=>abreModalConfiguracoes());
 
-      btnChangePass.onclick=()=>{
-        if(!currentUser){
-          const u=inputUser.value.trim();
-          abreModalTrocarSenhaLogin(u);
-        }else{
-          abreModalTrocarSenhaInterno();
-        }
-      };
+  btnChangePass.addEventListener("click",()=>{
+    if(!currentUser){
+      const u=inputUser.value.trim();
+      abreModalTrocarSenhaLogin(u);
+    }else{
+      abreModalTrocarSenhaInterno();
+    }
+  });
 
-      btnOpenReg.onclick=()=>abreModalRegistrarPedido();
-      btnExport.onclick=()=>exportarHistoricoCSV();
-      btnPrint.onclick=()=>imprimirHistorico();
-      btnBack.onclick=()=>{
-        document.getElementById("historyView").classList.add("hidden");
-        document.getElementById("appView").classList.remove("hidden");
-        btnHome.classList.add("hidden");
-      };
-      btnClearFilters.onclick=()=>limparFiltrosHistorico();
-      btnResetHistory.onclick=()=>abrirResetHistorico();
-      btnResetDay.onclick=()=>abrirResetDia();
+  btnOpenReg.addEventListener("click",()=>abreModalRegistrarPedido());
+  btnExport.addEventListener("click",()=>exportarHistoricoCSV());
+  btnPrint.addEventListener("click",()=>imprimirHistorico());
+  btnBack.addEventListener("click",()=>{
+    document.getElementById("historyView").classList.add("hidden");
+    document.getElementById("appView").classList.remove("hidden");
+    btnHome.classList.add("hidden");
+  });
+  btnClearFilters.addEventListener("click",()=>limparFiltrosHistorico());
+  btnResetHistory.addEventListener("click",()=>abrirResetHistorico());
+  btnResetDay.addEventListener("click",()=>abrirResetDia());
 
-      document.getElementById("filterStatus").onchange=()=>atualizaListaPedidos();
-      document.getElementById("filterSeller").onchange=()=>atualizaListaPedidos();
-      document.getElementById("searchInput").oninput=()=>atualizaListaPedidos();
+  document.getElementById("filterStatus")
+    .addEventListener("change",()=>atualizaListaPedidos());
+  document.getElementById("filterSeller")
+    .addEventListener("change",()=>atualizaListaPedidos());
+  document.getElementById("searchInput")
+    .addEventListener("input",()=>atualizaListaPedidos());
 
-      document.getElementById("historyPeriod").onchange=()=>atualizaHistorico();
-      document.getElementById("historyStart").onchange=()=>atualizaHistorico();
-      document.getElementById("historyEnd").onchange=()=>atualizaHistorico();
-      document.getElementById("historyStatus").onchange=()=>atualizaHistorico();
-      document.getElementById("historySeller").onchange=()=>atualizaHistorico();
-      document.getElementById("historySearch").oninput=()=>atualizaHistorico();
-    });
+  document.getElementById("historyPeriod")
+    .addEventListener("change",()=>atualizaHistorico());
+  document.getElementById("historyStart")
+    .addEventListener("change",()=>atualizaHistorico());
+  document.getElementById("historyEnd")
+    .addEventListener("change",()=>atualizaHistorico());
+  document.getElementById("historyStatus")
+    .addEventListener("change",()=>atualizaHistorico());
+  document.getElementById("historySeller")
+    .addEventListener("change",()=>atualizaHistorico());
+  document.getElementById("historySearch")
+    .addEventListener("input",()=>atualizaHistorico());
+});
+
 // ==== FIREBASE CONFIG START ====
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import {
