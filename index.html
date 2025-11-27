@@ -2394,28 +2394,34 @@ window.executarLogin = executarLogin
     .addEventListener("input",()=>atualizaHistorico());
 });
 
-// ==== FIREBASE CONFIG START ====
+    document.getElementById("historySeller")
+    .addEventListener("change",()=>atualizaHistorico());
+  document.getElementById("historySearch")
+    .addEventListener("input",()=>atualizaHistorico());
+});
+
+</script>
+
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-  import {
-    getFirestore,
-    collection,
-    addDoc,
-    getDocs
-  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
   const firebaseConfig = {
-    apiKey: "AIzaSyB5kSSNVyfIyGq9cOe1n8EmMtVhXW7gryY",
+    apiKey: "AIZaSyB5kSSNVYfyIGq9cOe1n8EmMtVhXW7gryY",
     authDomain: "nova-saude-sistema-entregas.firebaseapp.com",
     projectId: "nova-saude-sistema-entregas",
     storageBucket: "nova-saude-sistema-entregas.firebasestorage.app",
     messagingSenderId: "817212957836",
-    appId: "1:817212957836:web:920d639f86757b0fde87a9"
+    appId: "1:817212957836:web:9206d39f86757b0fde87a9"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const entregasRef = collection(db, "entregas"); // mesma coleção que você já usa
+
+  window.entregasRef = collection(db, "entregas");
+  window.addDoc = addDoc;
 </script>
-// ==== FIREBASE CONFIG END ====
+
 </body>
 </html>
+
