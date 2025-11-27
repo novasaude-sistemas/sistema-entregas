@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nova Sade - Controle de Entregas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --bg-dark:#020617;
+      --card-dark:#0b1220;
+      --accent:#2563eb;
+    }
+    html,body{
+      background:var(--bg-dark);
+      color:#e5e7eb;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Inter",sans-serif;
+      min-height:100vh;
+    }
+    .card{
+      background:var(--card-dark);
+      border-radius:14px;
+      padding:18px;
+      box-shadow:0 8px 28px rgba(15,23,42,.5);
+      border:1px solid #1f2937;
+    }
+    .card-kpi{
+      border-radius:14px;
+      padding:18px;
+      box-shadow:0 8px 28px rgba(15,23,42,.6);
+      color:#ffffff;
+      position:relative;
+    }
+    .btn{
+      background:var(--accent);
+      color:#fff;
+      padding:9px 18px;
+      border-radius:8px;
+      font-weight:600;
+      border:none;
+      cursor:pointer;
+      font-size:.9rem;
+    }
+    .btn-ghost{
+      background:transparent;
+      color:var(--accent);
+      padding:8px 16px;
+      border-radius:8px;
+      border:1px solid var(--accent);
+      font-weight:600;
+      cursor:pointer;
+      font-size:.85rem;
+    }
+    .btn-small{font-size:.75rem;padding:6px 10px;}
+    .btn-sair{
+      background:#020617;
+      color:#ffffff;
+      padding:8px 18px;
+      border-radius:10px;
+      font-weight:600;
+      border:1px solid #111827;
+      cursor:pointer;
+      font-size:.9rem;
+    }
+    .hidden{display:none!important;}
+    .small{font-size:.82rem;}
+    .required::after{content:" *";color:#f97316;font-weight:700;}
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:.7rem;
+      font-weight:600;
+    }
+    .badge-green{background:#bbf7d0;color:#14532d;}
+    .badge-red{background:#fecaca;color:#7f1d1d;}
+    .badge-blue{background:#bfdbfe;color:#1d4ed8;}
+    .badge-orange{background:#fed7aa;color:#9a3412;}
+
+    .input-base{
+      border-radius:0.5rem;
+      border:1px solid #1f2937;
+      padding:0.5rem 0.75rem;
+      font-size:0.875rem;
+      background:#020617;
+      color:#e5e7eb;
+    }
+    .input-wrapper{
+      display:flex;
+      align-items:center;
+      border-radius:0.5rem;
+      border:1px solid #1f2937;
+      background:#020617;
+      padding-right:0.25rem;
+      color:#e5e7eb;
+    }
+    .input-wrapper input{
+      border:none;
+      outline:none;
+      background:transparent;
+      flex:1;
+      padding:0.45rem 0.75rem;
+      font-size:0.875rem;
+      color:inherit;
+    }
+    .input-wrapper button{
+      border:none;
+      background:transparent;
+      cursor:pointer;
+      color:#9ca3af;
+      font-size:0.78rem;
+      padding:0 0.25rem;
+      white-space:nowrap;
+    }
+
+    .filter-dark{
+      background:#020617;
+      color:#ffffff;
+      border-radius:0.75rem;
+      border:1px solid #020617;
+      padding:0.5rem 0.75rem;
+      font-size:0.875rem;
+    }
+    .filter-dark::placeholder{color:#9ca3af;}
+
+    .kpi-tooltip{
+      position:absolute;
+      top:100%;
+      left:50%;
+      transform:translateX(-50%);
+      margin-top:8px;
+      background:#020617;
+      color:#e5e7eb;
+      border-radius:10px;
+      padding:8px 10px;
+      border:1px solid #1e293b;
+      font-size:0.75rem;
+      min-width:180px;
+      max-width:240px;
+      box-shadow:0 8px 24px rgba(15,23,42,.8);
+      z-index:40;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .15s ease-out;
+    }
+    .card-kpi.kpi-hover:hover .kpi-tooltip{
+      opacity:1;
+    }
+
+    @media print{
+      body{margin:0;background:#e5e7eb;color:#020617;}
+      @page{size:A4 landscape;margin:15mm;}
+    }
+  </style>
+</head>
+<body>
+  <header class="flex items-center justify-between px-6 py-4">
+    <div class="flex items-center gap-3">
+      <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold"
+           style="background:linear-gradient(135deg,#06b6d4,#2563eb);">
+        NS
+      </div>
+      <div>
+        <div class="font-semibold text-lg text-slate-100">Nova Sade</div>
+        <div class="text-sm text-slate-300">Controle de Entregas</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <div id="userInfo" class="text-xs text-slate-300"></div>
+      <div id="clock" class="px-4 py-1 rounded-full bg-slate-900 text-slate-100 text-sm shadow-sm"></div>
+    </div>
+  </header>
+
+  <main class="px-4 pb-8">
+    <section id="loginView" class="flex items-center justify-center min-h-[60vh]">
+      <div class="card w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4 text-slate-50">Acesso ao Sistema</h2>
+        <div class="mb-3">
+          <label class="small required text-slate-100">Usuário</label>
+          <input id="loginUser"
+                 class="input-base mt-1 w-full"
+                 autocomplete="off" />
+        </div>
+        <div class="mb-3">
+          <label class="small required text-slate-100">Senha</label>
+          <div class="input-wrapper mt-1">
+            <input id="loginPass" type="password" autocomplete="new-password" />
+            <button type="button" id="toggleLoginPass">Mostrar</button>
+          </div>
+        </div>
+        <div id="loginMsg" class="text-xs text-orange-400 min-h-[1rem] mb-2"></div>
+        <div class="flex justify-end gap-2">
+          <button id="btnLogin" class="btn">Entrar</button>
+          <button id="btnChangePass" class="btn-ghost">Trocar Senha</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="appView" class="hidden">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div class="flex gap-2">
+          <button id="btnHome" class="btn-ghost hidden">Início</button>
+          <button id="btnHistory" class="btn-ghost">Histórico</button>
+          <button id="btnConfig" class="btn-ghost hidden">Configurações</button>
+        </div>
+        <div class="flex gap-2">
+          <button id="btnLogout" class="btn-sair">Sair</button>
+        </div>
+      </div>
+
+      <div id="dashboard" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4"></div>
+      <div id="cardsEntregadores" class="flex flex-wrap gap-3 mb-4"></div>
+
+      <div class="flex flex-col lg:flex-row gap-5">
+        <div class="card lg:w-1/3">
+          <h3 class="font-semibold mb-3 text-slate-100">Ações Rápidas</h3>
+          <button id="btnOpenRegister" class="btn w-full mb-2">Registrar Pedido</button>
+          <p class="text-xs text-slate-300">
+            Lançar novas entregas do dia.
+          </p>
+          <button id="btnResetDay" class="btn-ghost mt-4 hidden">Resetar dia</button>
+        </div>
+
+        <div class="card flex-1">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
+            <select id="filterStatus" class="filter-dark">
+              <option value="Todos">Todos</option>
+              <option value="separacao">Separação</option>
+              <option value="rota">Em rota</option>
+              <option value="finalizada">Finalizada Conforme</option>
+              <option value="nao-conforme">Não Conforme</option>
+            </select>
+            <select id="filterSeller" class="filter-dark">
+              <option value="Todos">Todos os vendedores</option>
+            </select>
+            <input id="searchInput"
+                   class="filter-dark flex-1"
+                   placeholder="Pesquisar nº, cliente ou valor" />
+            <span class="text-xs text-slate-300">
+              Mostrando entregas do dia atual
+            </span>
+          </div>
+          <div id="listaPedidos" class="space-y-2 max-h-[52vh] overflow-auto text-xs"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="historyView" class="hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 class="font-semibold text-lg text-slate-100">
+          Histórico de Entregas
+        </h2>
+        <div class="flex flex-wrap gap-2 items-center text-xs w-full lg:w-auto">
+          <select id="historyPeriod"
+                  class="border rounded-md px-2 py-1 bg-slate-900 text-slate-100 border-slate-700">
+            <option value="currentMs">Mês Atual</option>
+            <option value="prevMs">Mês Anterior</option>
+            <option value="all">Todo Período</option>
+          </select>
+          <input id="historyStart" type="date"
+                 class="border rounded-md px-2 py-1 bg-slate-900 text-slate-100 border-slate-700" />
+          <input id="historyEnd" type="date"
+                 class="border rounded-md px-2 py-1 bg-slate-900 text-slate-100 border-slate-700" />
+          <select id="historyStatus"
+                  class="border rounded-md px-2 py-1 bg-slate-900 text-slate-100 border-slate-700">
+            <option value="Todos">Todos</option>
+            <option value="separacao">Separação</option>
+            <option value="rota">Em rota</option>
+            <option value="finalizada">Finalizada</option>
+            <option value="nao-conforme">Não Conforme</option>
+          </select>
+          <select id="historySeller"
+                  class="border rounded-md px-2 py-1 bg-slate-900 text-slate-100 border-slate-700">
+            <option value="Todos">Todos os vendedores</option>
+          </select>
+          <input id="historySearch"
+                 class="border rounded-md px-2 py-1 bg-slate-900 text-slate-100 border-slate-700 placeholder-slate-500 flex-1 min-w-[180px]"
+                 placeholder="Pesquisar nº, cliente ou valor" />
+          <button id="btnClearFilters" class="btn-ghost">Limpar Filtro</button>
+          <button id="btnExport" class="btn">Exportar Excel (CSV)</button>
+          <button id="btnPrint" class="btn-ghost">Imprimir Dashboard</button>
+          <button id="btnResetHistory" class="btn-ghost hidden">Resetar Histórico</button>
+          <button id="btnBack" class="btn-ghost">Voltar</button>
+        </div>
+      </div>
+
+      <div id="historyDashboard" class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3"></div>
+      <div id="historyEntregadores" class="mb-3"></div>
+      <div id="historyList" class="space-y-2 max-h-[62vh] overflow-auto text-xs"></div>
+    </section>
+
+    <div id="modalBg"
+         class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div id="modalCont"
+           class="bg-slate-900 rounded-xl p-5 w-full max-w-4xl max-h-[90vh]
+                  overflow-auto shadow-xl text-sm text-slate-100">
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let currentUser = null;
+    let lastDashboardDay = new Date().toISOString().slice(0,10);
+    let modalStackContent = null; // para manter conteúdo ao mostrar alertas sobrepostos
+
+    function updateClock(){
+      const d=new Date();
+      const f=n=>String(n).padStart(2,"0");
+      const el=document.getElementById("clock");
+      if(el){
+        el.textContent=
+          f(d.getHours())+":"+f(d.getMinutes())+":"+f(d.getSeconds());
+      }
+    }
+    setInterval(updateClock,1000);updateClock();
+
+    setInterval(()=>{
+      const hoje=new Date().toISOString().slice(0,10);
+      if(hoje!==lastDashboardDay && currentUser){
+        lastDashboardDay=hoje;
+        atualizaDashboard();
+        atualizaCardsEntregadores();
+        atualizaListaPedidos();
+      }
+    },60000);
+
+    async function idb(dbName,storeName,method,data){
+      return new Promise((resolve,reject)=>{
+        const req=indexedDB.open(dbName||"ns_entregas_v7",1);
+        req.onupgradeneeded=e=>{
+          const db=e.target.result;
+          if(!db.objectStoreNames.contains("users"))
+            db.createObjectStore("users",{keyPath:"usuario"});
+          if(!db.objectStoreNames.contains("pedidos"))
+            db.createObjectStore("pedidos",{keyPath:"id"});
+          if(!db.objectStoreNames.contains("vendedores"))
+            db.createObjectStore("vendedores",{keyPath:"id"});
+          if(!db.objectStoreNames.contains("entregadores"))
+            db.createObjectStore("entregadores",{keyPath:"id"});
+          if(!db.objectStoreNames.contains("pagamentos"))
+            db.createObjectStore("pagamentos",{keyPath:"id"});
+        };
+        req.onerror=()=>reject(req.error);
+        req.onsuccess=()=>{
+          const db=req.result;
+          const tx=db.transaction(
+            storeName,
+            ["get","getAll"].includes(method)?"readonly":"readwrite"
+          );
+          const store=tx.objectStore(storeName);
+          let op;
+          if(method==="getAll") op=store.getAll();
+          else if(method==="get") op=store.get(data);
+          else if(method==="put") op=store.put(data);
+          else if(method==="delete") op=store.delete(data);
+          else if(method==="clear") op=store.clear();
+          else return reject("Método inválido");
+          op.onerror=()=>reject(op.error);
+          op.onsuccess=()=>resolve(op.result);
+        };
+      });
+    }
+
+    async function ensureInit(){
+      const users=await idb(null,"users","getAll")||[];
+      if(users.length===0){
+        await idb(null,"users","put",{usuario:"admin",senha:"admin",nome:"Administrador",perfil:"admin"});
+        await idb(null,"users","put",{usuario:"operador",senha:"operador",nome:"Operador",perfil:"operador"});
+        await idb(null,"users","put",{usuario:"obs",senha:"observador",nome:"Observador",perfil:"observador"});
+      }
+      const vends=await idb(null,"vendedores","getAll")||[];
+      if(vends.length===0){
+        await idb(null,"vendedores","put",{id:"v1",nome:"Fulano"});
+        await idb(null,"vendedores","put",{id:"v2",nome:"Beltrano"});
+      }
+      const ents=await idb(null,"entregadores","getAll")||[];
+      if(ents.length===0){
+        await idb(null,"entregadores","put",{id:"e1",nome:"João"});
+        await idb(null,"entregadores","put",{id:"e2",nome:"Pedro"});
+      }
+      const pags=await idb(null,"pagamentos","getAll")||[];
+      if(pags.length===0){
+        await idb(null,"pagamentos","put",{id:"p1",nome:"Pix"});
+        await idb(null,"pagamentos","put",{id:"p2",nome:"Cartão"});
+        await idb(null,"pagamentos","put",{id:"p3",nome:"Dinheiro"});
+        await idb(null,"pagamentos","put",{id:"p4",nome:"Transferência"});
+      }
+    }
+
+    function abreModal(titulo,html){
+      const bg=document.getElementById("modalBg");
+      const cont=document.getElementById("modalCont");
+      cont.innerHTML=
+        `<div class="flex justify-between items-center mb-4">
+           <div class="font-semibold">${titulo}</div>
+           <button class="text-xs text-slate-400" onclick="fechaModal(true)">Fechar ✕</button>
+         </div>`+html;
+      bg.classList.remove("hidden");
+    }
+    function fechaModal(resetStack=false){
+      document.getElementById("modalBg").classList.add("hidden");
+      document.getElementById("modalCont").innerHTML="";
+      if(resetStack) modalStackContent=null;
+    }
+    function alertaModal(msg, onClose){
+      const bg=document.getElementById("modalBg");
+      const cont=document.getElementById("modalCont");
+      // Guarda o conteúdo atual do modal (por exemplo, Registrar Pedido)
+      if(!modalStackContent) modalStackContent=cont.innerHTML;
+      cont.innerHTML=
+        `<div class="flex justify-between items-center mb-4">
+           <div class="font-semibold">Aviso</div>
+           <button class="text-xs text-slate-400" onclick="restaurarModalStack()">Fechar ✕</button>
+         </div>
+         <p class="mb-4 text-orange-300">${msg}</p>
+         <button class="btn w-full" onclick="restaurarModalStack();${onClose?onClose:""}">Fechar</button>`;
+      bg.classList.remove("hidden");
+    }
+    function restaurarModalStack(){
+      if(!modalStackContent){fechaModal(true);return;}
+      const cont=document.getElementById("modalCont");
+      cont.innerHTML=modalStackContent;
+      modalStackContent=null;
+    }
+
+    function aplicarMascaraMoeda(el){
+      let v=el.value.replace(/[^0-9]/g,"");
+      if(v==="") v="0";
+      v=String(parseInt(v,10));
+      while(v.length<3) v="0"+v;
+      const int=v.slice(0,-2);
+      const dec=v.slice(-2);
+      const intFmt=int.replace(/\B(?=(\d{3})+(?!\d))/g,".");
+      el.value=intFmt+","+dec;
+    }
+    function parseMoedaToNumber(str){
+      if(!str) return 0;
+      const limpo=str.replace(/\./g,"").replace(",",".");
+      const n=parseFloat(limpo);
+      return isNaN(n)?0:n;
+    }
+    function capitalizarPrimeira(str){
+      const t=str.trim();
+      if(!t)return"";
+      return t.charAt(0).toUpperCase()+t.slice(1);
+    }
+
+    async function carregaVendedoresSelects(){
+      const vends=await idb(null,"vendedores","getAll")||[];
+      const selFiltro=document.getElementById("filterSeller");
+      const selHist=document.getElementById("historySeller");
+      const opts='<option value="Todos">Todos os vendedores</option>'+
+        vends.map(v=>`<option value="${v.nome}">${v.nome}</option>`).join("");
+      if(selFiltro) selFiltro.innerHTML=opts;
+      if(selHist) selHist.innerHTML=opts;
+    }
+
+    async function atualizaDashboard(){
+      const pedidos=await idb(null,"pedidos","getAll")||[];
+      const hoje=new Date().toISOString().slice(0,10);
+      const dia=pedidos.filter(p=>p.dataEntrada?.startsWith(hoje));
+
+      const sep=dia.filter(p=>p.status==="separacao").length;
+      const rota=dia.filter(p=>p.status==="rota").length;
+      const finC=dia.filter(p=>p.status==="finalizada" && p.conforme).length;
+      const nc=dia.filter(p=>p.teveNC).length;
+      const total=dia.length;
+
+      const mapPorEntregador={};
+      dia.forEach(p=>{
+        const ent=p.entregador||"Sem entregador";
+        if(!mapPorEntregador[ent]){
+          mapPorEntregador[ent]={rota:0,fin:0,nc:0,total:0};
+        }
+        mapPorEntregador[ent].total++;
+        if(p.status==="rota")mapPorEntregador[ent].rota++;
+        if(p.status==="finalizada" && p.conforme)mapPorEntregador[ent].fin++;
+        if(p.teveNC)mapPorEntregador[ent].nc++;
+      });
+
+      function renderTooltip(tipo){
+        const linhas=Object.entries(mapPorEntregador)
+          .filter(([_,v])=>{
+            if(tipo==="rota")return v.rota>0;
+            if(tipo==="fin")return v.fin>0;
+            if(tipo==="nc")return v.nc>0;
+            if(tipo==="total")return v.total>0;
+            return false;
+          })
+          .map(([nome,v])=>{
+            if(tipo==="rota")return `${nome}: ${v.rota}`;
+            if(tipo==="fin")return `${nome}: ${v.fin}`;
+            if(tipo==="nc")return `${nome}: ${v.nc}`;
+            if(tipo==="total")return `${nome}: ${v.total}`;
+          });
+        if(!linhas.length)return"";
+        return `<div class="kpi-tooltip">
+          ${linhas.map(l=>`<div>${l}</div>`).join("")}
+        </div>`;
+      }
+
+      document.getElementById("dashboard").innerHTML=`
+        <div class="card-kpi bg-blue-600">
+          <div class="text-xs uppercase">SEPARAÇÃO</div>
+          <div class="text-2xl font-bold mt-1">${sep}</div>
+        </div>
+        <div class="card-kpi bg-orange-500 kpi-hover">
+          <div class="text-xs uppercase">EM ROTA</div>
+          <div class="text-2xl font-bold mt-1">${rota}</div>
+          ${renderTooltip("rota")}
+        </div>
+        <div class="card-kpi bg-emerald-600 kpi-hover">
+          <div class="text-xs uppercase">FINALIZADAS C</div>
+          <div class="text-2xl font-bold mt-1">${finC}</div>
+          ${renderTooltip("fin")}
+        </div>
+        <div class="card-kpi bg-red-600 kpi-hover">
+          <div class="text-xs uppercase">NÃO CONFORMES</div>
+          <div class="text-2xl font-bold mt-1">${nc}</div>
+          ${renderTooltip("nc")}
+        </div>
+        <div class="card-kpi bg-slate-900 kpi-hover">
+          <div class="text-xs uppercase">TOTAL HOJE</div>
+          <div class="text-2xl font-bold mt-1">${total}</div>
+          ${renderTooltip("total")}
+        </div>`;
+    }
+
+    async function atualizaCardsEntregadores(){
+      const ents=await idb(null,"entregadores","getAll")||[];
+      const pedidos=await idb(null,"pedidos","getAll")||[];
+      const hoje=new Date().toISOString().slice(0,10);
+      let html="";
+      ents.forEach(e=>{
+        const lista=pedidos.filter(p=>p.dataEntrada?.startsWith(hoje) && p.entregador===e.nome);
+        const rota=lista.filter(p=>p.status==="rota").length;
+        const fin=lista.filter(p=>p.status==="finalizada" && p.conforme).length;
+        const nc=lista.filter(p=>p.teveNC).length;
+        html+=`
+          <div class="card min-w-[150px] text-xs">
+            <div class="font-semibold mb-1 text-slate-100">${e.nome}</div>
+            <div class="text-slate-200">Em rota: ${rota}</div>
+            <div class="text-slate-200">Finalizadas: ${fin}</div>
+            <div class="text-slate-200">Não conformes: ${nc}</div>
+            <div class="mt-1 text-slate-200">Total: ${lista.length}</div>
+          </div>`;
+      });
+      document.getElementById("cardsEntregadores").innerHTML=
+        html||`<p class="text-xs text-slate-300">
+          Nenhum entregador cadastrado.
+        </p>`;
+    }
+
+    function linhaEntregadorSaida(p){
+      if(!p.saida || !p.entregador) return "";
+      const hSaida=new Date(p.saida).toLocaleTimeString("pt-BR");
+      return `<div class="text-slate-400 text-[11px] mt-0.5">
+        Entregador: ${p.entregador} - Saída para rota de entrega: ${hSaida}
+      </div>`;
+    }
+
+    async function atualizaListaPedidos(){
+      const pedidos=await idb(null,"pedidos","getAll")||[];
+      const hoje=new Date().toISOString().slice(0,10);
+      let lista=pedidos.filter(p=>p.dataEntrada?.startsWith(hoje));
+
+      const filtro=document.getElementById("filterStatus").value;
+      const filtroVend=document.getElementById("filterSeller").value;
+      const busca=document.getElementById("searchInput").value.trim().toLowerCase();
+
+      if(filtro!=="Todos"){
+        if(filtro==="finalizada")
+          lista=lista.filter(p=>p.status==="finalizada" && p.conforme);
+        else
+          lista=lista.filter(p=>p.status===filtro);
+      }
+      if(filtroVend!=="Todos"){
+        lista=lista.filter(p=>p.vendedor===filtroVend);
+      }
+      if(busca){
+        lista=lista.filter(p=>
+          p.numero.toLowerCase().includes(busca)||
+          p.cliente.toLowerCase().includes(busca)||
+          String(p.valor).includes(busca)
+        );
+      }
+
+      const corStatus=p=>{
+        if(p.status==="separacao")return"badge badge-blue";
+        if(p.status==="rota")return"badge badge-orange";
+        if(p.status==="finalizada" && p.conforme)return"badge badge-green";
+        if(p.status==="nao-conforme")return"badge badge-red";
+        if(p.status==="finalizada" && p.conforme && p.teveNC)
+          return"badge badge-red";
+        return"badge";
+      };
+
+      const txtStatus=p=>{
+        if(p.status==="separacao")return"Separação";
+        if(p.status==="rota")return"Em rota";
+        if(p.status==="nao-conforme")return"Não conforme";
+        if(p.status==="finalizada" && p.conforme && p.teveNC)
+          return"NC (finalizada)";
+        if(p.status==="finalizada" && p.conforme)return"Finalizada (C)";
+        return p.status;
+      };
+
+      let html="";
+      lista.sort((a,b)=>a.numero.localeCompare(b.numero));
+      lista.forEach(p=>{
+        const podeEditar=currentUser && currentUser.perfil!=="observador";
+        const linhaClasse=p.status==="nao-conforme"
+          ? "bg-red-900/30"
+          : "bg-slate-900";
+        const obsTxt=p.observacoes?` • Obs: ${p.observacoes}`:"";
+        html+=`
+          <div class="border border-slate-700 rounded-md px-3 py-2 flex justify-between items-center ${linhaClasse}">
+            <div class="text-left flex-1 text-xs"
+                 onclick="abrirDetalhesEntrega('${p.id}')">
+              <div class="font-semibold text-slate-100">
+                ${p.numero} • ${p.cliente}
+              </div>
+              <div class="text-slate-300">
+                ${p.vendedor} • ${new Date(p.dataEntrada).toLocaleString("pt-BR")} •
+                R$ ${p.valor.toFixed(2)} • ${p.pagamento||""}${obsTxt}
+              </div>
+              ${linhaEntregadorSaida(p)}
+              <div class="mt-1 ${corStatus(p)}">
+                ${
+                  p.status==="finalizada" && p.conforme && p.teveNC
+                  ? `<span class="text-red-700 font-bold">NC</span> <span>(finalizada)</span>`
+                  : txtStatus(p)
+                }
+              </div>
+            </div>
+            <div class="flex flex-col gap-1 ml-2">
+              <button class="btn-small btn-ghost" ${podeEditar?"":"disabled"}
+                      onclick="event.stopPropagation();abrirAcoesEntrega('${p.id}')">Ações</button>
+              <button class="btn-small btn-ghost text-red-400 border-red-500"
+                      ${podeEditar?"":"disabled"}
+                      onclick="event.stopPropagation();excluirPedido('${p.id}')">Excluir</button>
+            </div>
+          </div>`;
+      });
+      document.getElementById("listaPedidos").innerHTML=
+        html||`<p class="text-xs text-slate-300">
+          Nenhuma entrega para hoje.
+        </p>`;
+    }
+
+    async function excluirPedido(id){
+      if(!currentUser || currentUser.perfil==="observador")return;
+      if(!confirm("Confirma excluir esta entrega?"))return;
+      await idb(null,"pedidos","delete",id);
+      atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
+    }
+
+    async function atualizaHistorico(){
+      const pedidos=await idb(null,"pedidos","getAll")||[];
+      const periodo=document.getElementById("historyPeriod").value;
+      const dIni=document.getElementById("historyStart").value;
+      const dFim=document.getElementById("historyEnd").value;
+      const statusF=document.getElementById("historyStatus").value;
+      const vendF=document.getElementById("historySeller").value;
+      const busca=document.getElementById("historySearch").value.trim().toLowerCase();
+
+      let lista=pedidos;
+      let di=null,df=null;
+      if(dIni) di=new Date(dIni+"T00:00:00");
+      if(dFim) df=new Date(dFim+"T23:59:59");
+
+      lista=lista.filter(p=>{
+        const dt=new Date(p.dataEntrada);
+
+        if(periodo==="currentMs"){
+          const n=new Date();
+          if(dt.getMonth()!==n.getMonth()||dt.getFullYear()!==n.getFullYear())return false;
+        }else if(periodo==="prevMs"){
+          const n=new Date();
+          let m=n.getMonth()-1,y=n.getFullYear();
+          if(m<0){m=11;y--;}
+          if(dt.getMonth()!==m||dt.getFullYear()!==y)return false;
+        }
+        if(di && dt<di)return false;
+        if(df && dt>df)return false;
+        if(statusF!=="Todos"){
+          if(statusF==="nao-conforme"){
+            if(!p.teveNC)return false;
+          }else if(statusF==="finalizada"){
+            if(p.status!=="finalizada")return false;
+          }else{
+            if(p.status!==statusF)return false;
+          }
+        }
+        if(vendF!=="Todos" && p.vendedor!==vendF)return false;
+        if(busca && !(
+          p.numero.toLowerCase().includes(busca)||
+          p.cliente.toLowerCase().includes(busca)||
+          String(p.valor).includes(busca)
+        ))return false;
+        return true;
+      });
+
+      const total=lista.length;
+      const fin=lista.filter(p=>p.status==="finalizada" && p.conforme).length;
+      const rota=lista.filter(p=>p.status==="rota").length;
+      const nc=lista.filter(p=>p.teveNC).length;
+
+      document.getElementById("historyDashboard").innerHTML=`
+        <div class="card-kpi bg-orange-500">
+          <div class="text-xs uppercase">EM ROTA</div>
+          <div class="text-2xl font-bold mt-1">${rota}</div>
+        </div>
+        <div class="card-kpi bg-emerald-600">
+          <div class="text-xs uppercase">FINALIZADAS (C)</div>
+          <div class="text-2xl font-bold mt-1">${fin}</div>
+        </div>
+        <div class="card-kpi bg-red-600">
+          <div class="text-xs uppercase">NÃO CONFORMES</div>
+          <div class="text-2xl font-bold mt-1">${nc}</div>
+        </div>
+        <div class="card-kpi bg-slate-900">
+          <div class="text-xs uppercase">TOTAL</div>
+          <div class="text-2xl font-bold mt-1">${total}</div>
+        </div>`;
+
+      const ents=await idb(null,"entregadores","getAll")||[];
+      let htmlEnt="<h3 class='font-semibold mb-2 text-slate-100'>Entregas por Entregador (filtro atual)</h3>";
+      if(ents.length){
+        htmlEnt+="<div class='flex flex-wrap gap-3 text-xs'>";
+        ents.forEach(e=>{
+          const l=lista.filter(p=>p.entregador===e.nome);
+          if(l.length===0)return;
+          const rotaE=l.filter(p=>p.status==="rota").length;
+          const finE=l.filter(p=>p.status==="finalizada" && p.conforme).length;
+          const ncE=l.filter(p=>p.teveNC).length;
+          htmlEnt+=`
+            <div class="card min-w-[150px]">
+              <div class="font-semibold mb-1 text-slate-100">${e.nome}</div>
+              <div class="text-slate-200">Em rota: ${rotaE}</div>
+              <div class="text-slate-200">Finalizadas: ${finE}</div>
+              <div class="text-slate-200">Não conformes: ${ncE}</div>
+              <div class="mt-1 text-slate-200">Total: ${l.length}</div>
+            </div>`;
+        });
+        htmlEnt+="</div>";
+      }else{
+        htmlEnt+="<p class='text-xs text-slate-300'>Nenhum entregador cadastrado.</p>";
+      }
+      document.getElementById("historyEntregadores").innerHTML=htmlEnt;
+
+      let html="";
+      lista.sort((a,b)=>new Date(b.dataEntrada)-new Date(a.dataEntrada));
+      lista.forEach(p=>{
+        const podeEditar=currentUser && currentUser.perfil!=="observador";
+        const linhaClasse=p.status==="nao-conforme"
+          ? "bg-red-900/30"
+          : "bg-slate-900";
+        const eStatus=()=>{
+          if(p.status==="nao-conforme")return"Não conforme";
+          if(p.status==="finalizada" && p.conforme && p.teveNC)
+            return`<span class="text-red-400 font-bold">NC</span> <span>(finalizada)</span>`;
+          if(p.status==="finalizada" && p.conforme)return"Finalizada (C)";
+          if(p.status==="rota")return"Em rota";
+          if(p.status==="separacao")return"Separação";
+          return p.status;
+        };
+        const obsTxt=p.observacoes?` • Obs: ${p.observacoes}`:"";
+        html+=`
+          <div class="border border-slate-700 rounded-md px-3 py-2 flex justify-between items-center ${linhaClasse}">
+            <div class="text-left flex-1"
+                 onclick="abrirDetalhesEntrega('${p.id}')">
+              <div class="font-semibold text-slate-100">
+                ${p.numero} • ${p.cliente}
+                <span class="text-slate-400">(${p.vendedor})</span>
+              </div>
+              <div class="text-slate-300 text-xs">
+                ${new Date(p.dataEntrada).toLocaleString("pt-BR")} •
+                R$ ${p.valor.toFixed(2)} • ${p.pagamento||""}${obsTxt}
+              </div>
+              ${linhaEntregadorSaida(p)}
+              <div class="mt-1 text-xs">
+                ${eStatus()}
+              </div>
+            </div>
+            <div class="flex flex-col gap-1 ml-2">
+              <button class="btn-small btn-ghost" ${podeEditar?"":"disabled"}
+                      onclick="event.stopPropagation();abrirAcoesEntrega('${p.id}')">Ações</button>
+              <button class="btn-small btn-ghost text-red-400 border-red-500" ${podeEditar?"":"disabled"}
+                      onclick="event.stopPropagation();abrirExcluirComSenha('${p.id}')">Excluir</button>
+            </div>
+          </div>`;
+      });
+      document.getElementById("historyList").innerHTML=
+        html||`<p class="text-xs text-slate-300">
+          Nenhum registro encontrado.
+        </p>`;
+    }
+
+    function limparFiltrosHistorico(){
+      document.getElementById("historyPeriod").value="currentMs";
+      document.getElementById("historyStart").value="";
+      document.getElementById("historyEnd").value="";
+      document.getElementById("historyStatus").value="Todos";
+      document.getElementById("historySeller").value="Todos";
+      document.getElementById("historySearch").value="";
+      atualizaHistorico();
+    }
+
+    async function abrirDetalhesEntrega(id){
+      const p=await idb(null,"pedidos","get",id);
+      if(!p){alertaModal("Entrega não encontrada.");return;}
+      let andHtml="";
+      if(p.andamentos && p.andamentos.length){
+        andHtml+="<ul class='list-disc pl-5 mt-1'>";
+        p.andamentos.forEach(a=>{
+          andHtml+=`<li class="mb-1">
+            <span class="text-slate-400">
+              ${new Date(a.data).toLocaleString("pt-BR")} • ${a.usuario}:
+            </span> ${a.descricao}</li>`;
+        });
+        andHtml+="</ul>";
+      }else{
+        andHtml+="<div class='text-xs text-slate-400'>Sem andamentos</div>";
+      }
+      const html=`
+        <div class="text-xs space-y-1">
+          <div><b>Número:</b> ${p.numero}</div>
+          <div><b>Cliente:</b> ${p.cliente}</div>
+          <div><b>Vendedor:</b> ${p.vendedor}</div>
+          <div><b>Valor:</b> R$ ${p.valor.toFixed(2)}</div>
+          <div><b>Pagamento:</b> ${p.pagamento||"-"}</div>
+          <div><b>Observações:</b> ${p.observacoes||"-"}</div>
+          <div><b>Entrada:</b> ${p.dataEntrada?new Date(p.dataEntrada).toLocaleString("pt-BR"):"-"}</div>
+          <div><b>Saída:</b> ${p.saida?new Date(p.saida).toLocaleString("pt-BR"):"-"}</div>
+          <div><b>Entregador:</b> ${p.entregador||"-"}</div>
+          <div><b>Status:</b> ${p.status}</div>
+          <div><b>Justificativa:</b> ${p.justificativa||"-"}</div>
+          <div class="mt-3 font-semibold">Andamentos</div>
+          ${andHtml}
+        </div>`;
+      abreModal("Detalhes da Entrega",html);
+    }
+
+    async function abrirAcoesEntrega(id){
+      const p=await idb(null,"pedidos","get",id);
+      if(!p){alertaModal("Entrega não encontrada.");return;}
+      const soLeitura=!currentUser || currentUser.perfil==="observador";
+
+      const ents=await idb(null,"entregadores","getAll")||[];
+      const selEnt=ents.map(e=>
+        `<option value="${e.nome}" ${e.nome===p.entregador?"selected":""}>${e.nome}</option>`
+      ).join("");
+
+      let saidaInfo="";
+      if(p.saida){
+        saidaInfo=`<div class="text-xs text-slate-400">
+          Saída registrada: ${new Date(p.saida).toLocaleString("pt-BR")}
+          • ${p.entregador||"-"}
+        </div>`;
+      }
+
+      let botoesSaida="";
+      let blocoResultado="";
+
+      if(!soLeitura){
+        if(p.status==="separacao"){
+          botoesSaida=`
+            <div class="mt-3">
+              <label class="small block mb-1">Entregador</label>
+              <select id="acaoEntregador"
+                      class="border border-slate-700 rounded-md px-2 py-1 text-xs w-full bg-slate-900 text-slate-100">
+                <option value="">Selecione...</option>
+                ${selEnt}
+              </select>
+            </div>
+            <button class="btn mt-3" onclick="confirmarSaida('${p.id}')">Confirmar Saída</button>`;
+        }else{
+          if(p.saida){
+            botoesSaida=`
+              ${saidaInfo}
+              <div class="mt-3 flex gap-2">
+                <button class="btn-ghost" onclick="desfazerSaida('${p.id}')">
+                  Desfazer Saída
+                </button>
+              </div>`;
+          }
+        }
+
+        if(p.status==="rota"){
+          blocoResultado=`
+            <div class="mt-4 space-y-2">
+              <div class="small font-semibold">Finalizar Entrega</div>
+              <div class="flex gap-2">
+                <button class="btn bg-emerald-600"
+                        onclick="finalizarEntregaConforme('${p.id}')">Conforme</button>
+                <button class="btn bg-red-600"
+                        onclick="abrirNaoConforme('${p.id}')">Não Conforme</button>
+              </div>
+            </div>`;
+        }else if(p.status==="nao-conforme"){
+          blocoResultado=`
+            <div class="mt-4 space-y-2">
+              <div class="small font-semibold">Entrega Não Conforme</div>
+              <button class="btn-ghost"
+                      onclick="abrirRegistrarAndamento('${p.id}')">
+                Registrar andamento
+              </button>
+            </div>`;
+        }else if(p.status==="finalizada"){
+          blocoResultado=`
+            <div class="mt-4 space-y-2">
+              <div class="small font-semibold">Entrega Finalizada</div>
+              <button class="btn-ghost"
+                      onclick="desfazerFinalizacao('${p.id}')">
+                Desfazer Finalização
+              </button>
+            </div>`;
+        }
+      }
+
+      const html=`
+        <div class="text-xs space-y-2">
+          <div class="font-semibold text-base text-slate-100">
+            ${p.numero} • ${p.cliente}
+          </div>
+          <div>Status:
+            <span class="font-semibold">
+              ${p.status}${p.status==="finalizada"?(p.conforme?" (Conforme)":""):""}
+            </span>
+          </div>
+          ${saidaInfo}
+          ${botoesSaida}
+          ${blocoResultado}
+        </div>`;
+      abreModal("Ações da Entrega",html);
+    }
+
+    async function confirmarSaida(id){
+      const p=await idb(null,"pedidos","get",id);if(!p)return;
+      const sel=document.getElementById("acaoEntregador");
+      if(!sel){alertaModal("Selecione o entregador.");return;}
+      const entregador=sel.value.trim();
+      if(!entregador){alertaModal("Selecione o entregador.");return;}
+      p.entregador=entregador;
+      p.saida=new Date().toISOString();
+      p.status="rota";
+      await idb(null,"pedidos","put",p);
+      fechaModal(true);
+      atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
+    }
+    async function desfazerSaida(id){
+      const p=await idb(null,"pedidos","get",id);if(!p)return;
+      p.saida=null;p.entregador=null;p.status="separacao";
+      await idb(null,"pedidos","put",p);
+      fechaModal(true);
+      atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
+    }
+
+    async function finalizarEntregaConforme(id){
+      const p=await idb(null,"pedidos","get",id);if(!p)return;
+      p.status="finalizada";
+      p.conforme=true;
+      await idb(null,"pedidos","put",p);
+      fechaModal(true);
+      atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
+    }
+
+    async function abrirNaoConforme(id){
+      const html=`
+        <div class="space-y-3 text-xs">
+          <div class="small font-semibold">Justificativa do Não Conforme</div>
+          <textarea id="ncJust"
+                    class="border border-slate-700 rounded-md w-full px-2 py-1 h-24
+                           bg-slate-900 text-slate-100"></textarea>
+          <div class="flex gap-2 justify-end">
+            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
+            <button class="btn bg-red-600"
+                    onclick="salvarNaoConformeInicial('${id}')">Salvar Não Conforme</button>
+          </div>
+        </div>`;
+      abreModal("Registrar Não Conforme",html);
+    }
+    async function salvarNaoConformeInicial(id){
+      let txt=document.getElementById("ncJust").value;
+      txt=capitalizarPrimeira(txt);
+      if(!txt){alertaModal("Informe a justificativa.");return;}
+      const p=await idb(null,"pedidos","get",id);if(!p)return;
+      p.status="nao-conforme";
+      p.conforme=false;
+      p.justificativa=txt;
+      p.andamentos=p.andamentos||[];
+      p.andamentos.push({
+        data:new Date().toISOString(),
+        usuario:currentUser.nome,
+        descricao:txt
+      });
+      p.teveNC=true;
+      await idb(null,"pedidos","put",p);
+      fechaModal(true);
+      atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
+    }
+
+    async function abrirRegistrarAndamento(id){
+      const html=`
+        <div class="space-y-3 text-xs">
+          <div class="small font-semibold">Registrar andamento</div>
+          <textarea id="ncAnd"
+                    class="border border-slate-700 rounded-md w-full px-2 py-1 h-24
+                           bg-slate-900 text-slate-100"></textarea>
+          <div class="flex gap-2 justify-between flex-wrap">
+            <button class="btn bg-red-600 flex-1"
+                    onclick="salvarAndamentoNc('${id}','manter')">
+              Manter Não Conforme
+            </button>
+            <button class="btn bg-emerald-600 flex-1"
+                    onclick="salvarAndamentoNc('${id}','finalizar')">
+              Finalizar
+            </button>
+          </div>
+        </div>`;
+      abreModal("Registrar Andamento - Não Conforme",html);
+    }
+    async function salvarAndamentoNc(id,acao){
+      let txt=document.getElementById("ncAnd").value;
+      txt=capitalizarPrimeira(txt);
+      if(!txt){alertaModal("Informe a justificativa/andamento.");return;}
+      const p=await idb(null,"pedidos","get",id);if(!p)return;
+      p.andamentos=p.andamentos||[];
+      p.andamentos.push({
+        data:new Date().toISOString(),
+        usuario:currentUser.nome,
+        descricao:txt
+      });
+      p.teveNC=true;
+      if(acao==="finalizar"){
+        p.status="finalizada";
+        p.conforme=true;
+      }
+      await idb(null,"pedidos","put",p);
+      fechaModal(true);
+      atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
+    }
+
+    async function desfazerFinalizacao(id){
+      const p=await idb(null,"pedidos","get",id);if(!p)return;
+      p.status=p.saida?"rota":"separacao";
+      p.conforme=null;
+      await idb(null,"pedidos","put",p);
+      fechaModal(true);
+      atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
+    }
+
+    function abreModalTrocarSenhaLogin(usuarioDigitado){
+      const html=`
+        <div class="text-xs space-y-3">
+          <div>Usuário: <b>${usuarioDigitado||"(não informado)"}</b></div>
+          <div>
+            <label class="small required block mb-1">Senha atual</label>
+            <input id="senhaAtual" type="password"
+                   class="border border-slate-700 w-full rounded-md px-2 py-1
+                          bg-slate-900 text-slate-100" />
+          </div>
+          <div>
+            <label class="small required block mb-1">Nova senha</label>
+            <input id="novaSenha1" type="password"
+                   class="border border-slate-700 w-full rounded-md px-2 py-1
+                          bg-slate-900 text-slate-100" />
+          </div>
+          <div>
+            <label class="small required block mb-1">Confirmar nova senha</label>
+            <input id="novaSenha2" type="password"
+                   class="border border-slate-700 w-full rounded-md px-2 py-1
+                          bg-slate-900 text-slate-100" />
+          </div>
+          <div class="flex justify-end gap-2 mt-2">
+            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
+            <button class="btn" onclick="executarTrocaSenhaLogin('${usuarioDigitado||""}')">
+              Salvar
+            </button>
+          </div>
+        </div>`;
+      abreModal("Trocar Senha",html);
+    }
+
+    async function executarTrocaSenhaLogin(usuarioDigitado){
+      const usuario=usuarioDigitado.trim().toLowerCase();
+      if(!usuario){alertaModal("Informe o usuário na tela de login antes de trocar a senha.");return;}
+      const user=await idb(null,"users","get",usuario);
+      if(!user){alertaModal("Usuário não encontrado.");return;}
+      const atual=document.getElementById("senhaAtual").value.trim();
+      const nova1=document.getElementById("novaSenha1").value.trim();
+      const nova2=document.getElementById("novaSenha2").value.trim();
+      if(!atual||!nova1||!nova2){
+        alertaModal("Preencha todos os campos de senha.");return;
+      }
+      if(user.senha!==atual){
+        alertaModal("Senha atual incorreta.");return;
+      }
+      if(nova1!==nova2){
+        alertaModal("Nova senha e confirmação não conferem.");return;
+      }
+      user.senha=nova1;
+      await idb(null,"users","put",user);
+      fechaModal(true);
+      alertaModal("Senha alterada com sucesso.");
+    }
+
+    function abreModalTrocarSenhaInterno(){
+      if(!currentUser)return;
+      const html=`
+        <div class="text-xs space-y-3">
+          <div>Usuário: <b>${currentUser.usuario} (${currentUser.nome})</b></div>
+          <div>
+            <label class="small required block mb-1">Senha atual</label>
+            <input id="senhaAtualInt" type="password"
+                   class="border border-slate-700 w-full rounded-md px-2 py-1
+                          bg-slate-900 text-slate-100" />
+          </div>
+          <div>
+            <label class="small required block mb-1">Nova senha</label>
+            <input id="novaSenha1Int" type="password"
+                   class="border border-slate-700 w-full rounded-md px-2 py-1
+                          bg-slate-900 text-slate-100" />
+          </div>
+          <div>
+            <label class="small required block mb-1">Confirmar nova senha</label>
+            <input id="novaSenha2Int" type="password"
+                   class="border border-slate-700 w-full rounded-md px-2 py-1
+                          bg-slate-900 text-slate-100" />
+          </div>
+          <div class="flex justify-end gap-2 mt-2">
+            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
+            <button class="btn" onclick="executarTrocaSenhaInterno()">
+              Salvar
+            </button>
+          </div>
+        </div>`;
+      abreModal("Trocar Senha",html);
+    }
+
+    async function executarTrocaSenhaInterno(){
+      if(!currentUser)return;
+      const atual=document.getElementById("senhaAtualInt").value.trim();
+      const nova1=document.getElementById("novaSenha1Int").value.trim();
+      const nova2=document.getElementById("novaSenha2Int").value.trim();
+      if(!atual||!nova1||!nova2){
+        alertaModal("Preencha todos os campos de senha.");return;
+      }
+      if(currentUser.senha!==atual){
+        alertaModal("Senha atual incorreta.");return;
+      }
+      if(nova1!==nova2){
+        alertaModal("Nova senha e confirmação não conferem.");return;
+      }
+      currentUser.senha=nova1;
+      await idb(null,"users","put",currentUser);
+      fechaModal(true);
+      alertaModal("Senha alterada com sucesso.");
+    }
+
+    async function abreModalRegistrarPedido(){
+      if(!currentUser || currentUser.perfil==="observador")return;
+      const vends=await idb(null,"vendedores","getAll")||[];
+      const pags=await idb(null,"pagamentos","getAll")||[];
+      const selVend=vends.map(v=>`<option value="${v.nome}">${v.nome}</option>`).join("");
+      const selPag=pags.map(p=>`<option value="${p.nome}">${p.nome}</option>`).join("");
+      const html=`
+        <div class="grid gap-3 text-xs">
+          <div>
+            <label class="small required block mb-1">Nº Pedido</label>
+            <input id="rpNumero"
+                   class="border border-slate-700 rounded-md px-2 py-1 w-full
+                          bg-slate-900 text-slate-100"
+                   oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+          </div>
+          <div>
+            <label class="small required block mb-1">Vendedor</label>
+            <select id="rpVendedor"
+                    class="border border-slate-700 rounded-md px-2 py-1 w-full
+                           bg-slate-900 text-slate-100">
+              <option value="">Selecione...</option>${selVend}
+            </select>
+          </div>
+          <div>
+            <label class="small required block mb-1">Cliente</label>
+            <input id="rpCliente"
+                   style="text-transform:uppercase;"
+                   class="border border-slate-700 rounded-md px-2 py-1 w-full
+                          bg-slate-900 text-slate-100" />
+          </div>
+          <div>
+            <label class="small required block mb-1">Valor (R$)</label>
+            <input id="rpValor"
+                   class="border border-slate-700 rounded-md px-2 py-1 w-full
+                          bg-slate-900 text-slate-100"
+                   placeholder="0,00" oninput="aplicarMascaraMoeda(this)" />
+          </div>
+          <div>
+            <label class="small required block mb-1">Pagamento</label>
+            <select id="rpPagamento"
+                    class="border border-slate-700 rounded-md px-2 py-1 w-full
+                           bg-slate-900 text-slate-100">
+              <option value="">Selecione...</option>${selPag}
+            </select>
+          </div>
+          <div>
+            <label class="small block mb-1">Observações</label>
+            <textarea id="rpObs"
+                      class="border border-slate-700 rounded-md px-2 py-1 w-full h-16
+                             bg-slate-900 text-slate-100"></textarea>
+          </div>
+          <div class="text-xs text-slate-300 mt-2">
+            Campos com * são obrigatórios.
+          </div>
+          <div class="flex justify-end gap-2 mt-2">
+            <button class="btn-ghost" onclick="fechaModal(true)">Fechar</button>
+            <button class="btn" onclick="salvarNovoPedido()">Salvar pedido</button>
+          </div>
+        </div>`;
+      abreModal("Registrar Pedido",html);
+    }
+
+    async function salvarNovoPedido(){
+      const numero=document.getElementById("rpNumero").value.trim();
+      const cliente=document.getElementById("rpCliente").value.trim();
+      const vendedor=document.getElementById("rpVendedor").value;
+      const valor=parseMoedaToNumber(document.getElementById("rpValor").value);
+      const pagamento=document.getElementById("rpPagamento").value;
+      let obs=document.getElementById("rpObs").value;
+      obs=capitalizarPrimeira(obs);
+
+      if(!numero||!cliente||!vendedor||!pagamento){
+        alertaModal("Preencha número, cliente, vendedor e pagamento.");
+        return;
+      }
+      if(valor<=0){
+        alertaModal("Informe um valor maior que zero.");
+        return;
+      }
+
+      const pedido={
+        id:Date.now().toString(),
+        numero,
+        cliente:cliente.toUpperCase(),
+        vendedor,
+        valor,
+        pagamento,
+        observacoes:obs,
+        status:"separacao",
+        conforme:null,
+        dataEntrada:new Date().toISOString(),
+        saida:null,
+        entregador:null,
+        justificativa:"",
+        andamentos:[],
+        teveNC:false
+      };
+      await idb(null,"pedidos","put",pedido);
+      fechaModal(true);
+      atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
+    }
+
+    async function abreModalConfiguracoes(){
+      if(!currentUser || currentUser.perfil!=="admin"){return;}
+      const html=`
+        <div class="flex gap-6 text-xs">
+          <div class="w-32 space-y-2 font-semibold">
+            <button class="block text-left w-full"
+                    onclick="mostrarAbaConfig('usuarios')">Usuários</button>
+            <button class="block text-left w-full"
+                    onclick="mostrarAbaConfig('vendedores')">Vendedores</button>
+            <button class="block text-left w-full"
+                    onclick="mostrarAbaConfig('entregadores')">Entregadores</button>
+            <button class="block text-left w-full"
+                    onclick="mostrarAbaConfig('pagamentos')">Formas de Pagamento</button>
+          </div>
+          <div class="flex-1" id="configContent"></div>
+        </div>
+        <div class="mt-4 text-right">
+          <button class="btn-ghost" onclick="fechaModal(true)">Fechar</button>
+        </div>`;
+      abreModal("Configurações",html);
+      mostrarAbaConfig('usuarios');
+    }
+
+    async function mostrarAbaConfig(aba){
+      const cont=document.getElementById("configContent");
+      if(aba==="usuarios"){
+        const users=await idb(null,"users","getAll")||[];
+        let lista=users.map(u=>
+          `<div class='flex items-center gap-2 mb-1'>
+             <span>${u.nome} (${u.usuario}) - ${u.perfil}</span>
+             ${u.usuario!=="admin"?
+               `<button class='btn-small btn-ghost'
+                        onclick="excluirUsuario('${u.usuario}')">Excluir</button>`:""}
+           </div>`).join("");
+        if(!lista)lista="<div class='text-slate-400'>Sem usuários.</div>";
+        cont.innerHTML=`
+          <div class="font-semibold mb-2">Usuários</div>
+          ${lista}
+          <div class="mt-3 grid grid-cols-4 gap-2">
+            <input id="cfgUserNome" placeholder="Nome"
+                   class="border border-slate-700 rounded-md px-2 py-1 bg-slate-900 text-slate-100" />
+            <input id="cfgUserLogin" placeholder="Usuário"
+                   class="border border-slate-700 rounded-md px-2 py-1 bg-slate-900 text-slate-100" />
+            <input id="cfgUserSenha" placeholder="Senha" type="password"
+                   class="border border-slate-700 rounded-md px-2 py-1 bg-slate-900 text-slate-100" />
+            <select id="cfgUserPerfil"
+                    class="border border-slate-700 rounded-md px-2 py-1 bg-slate-900 text-slate-100">
+              <option value="admin">admin</option>
+              <option value="operador">operador</option>
+              <option value="observador">observador</option>
+            </select>
+          </div>
+          <button class="btn mt-3" onclick="adicionarUsuario()">Adicionar</button>`;
+      }else if(aba==="vendedores"){
+        const vends=await idb(null,"vendedores","getAll")||[];
+        let lista=vends.map(v=>
+          `<div class='flex items-center gap-2 mb-1'>
+             <span>${v.nome}</span>
+             <button class='btn-small btn-ghost'
+                     onclick="excluirCadastro('vendedores','${v.id}')">Excluir</button>
+           </div>`).join("");
+        if(!lista)lista="<div class='text-slate-400'>Sem vendedores.</div>";
+        cont.innerHTML=`
+          <div class="font-semibold mb-2">Vendedores</div>
+          ${lista}
+          <div class="mt-3 flex gap-2">
+            <input id="cfgVendNome" placeholder="Novo vendedor"
+                   class="border border-slate-700 rounded-md px-2 py-1 flex-1 bg-slate-900 text-slate-100" />
+            <button class="btn" onclick="adicionarCadastro('vendedores','cfgVendNome')">
+              Adicionar
+            </button>
+          </div>`;
+      }else if(aba==="entregadores"){
+        const ents=await idb(null,"entregadores","getAll")||[];
+        let lista=ents.map(e=>
+          `<div class='flex items-center gap-2 mb-1'>
+             <span>${e.nome}</span>
+             <button class='btn-small btn-ghost'
+                     onclick="excluirCadastro('entregadores','${e.id}')">Excluir</button>
+           </div>`).join("");
+        if(!lista)lista="<div class='text-slate-400'>Sem entregadores.</div>";
+        cont.innerHTML=`
+          <div class="font-semibold mb-2">Entregadores</div>
+          ${lista}
+          <div class="mt-3 flex gap-2">
+            <input id="cfgEntNome" placeholder="Novo entregador"
+                   class="border border-slate-700 rounded-md px-2 py-1 flex-1 bg-slate-900 text-slate-100" />
+            <button class="btn" onclick="adicionarCadastro('entregadores','cfgEntNome')">
+              Adicionar
+            </button>
+          </div>`;
+      }else if(aba==="pagamentos"){
+        const pags=await idb(null,"pagamentos","getAll")||[];
+        let lista=pags.map(p=>
+          `<div class='flex items-center gap-2 mb-1'>
+             <span>${p.nome}</span>
+             <button class='btn-small btn-ghost'
+                     onclick="excluirCadastro('pagamentos','${p.id}')">Excluir</button>
+           </div>`).join("");
+        if(!lista)lista="<div class='text-slate-400'>Sem formas de pagamento.</div>";
+        cont.innerHTML=`
+          <div class="font-semibold mb-2">Formas de Pagamento</div>
+          ${lista}
+          <div class="mt-3 flex gap-2">
+            <input id="cfgPagNome" placeholder="Nova forma"
+                   class="border border-slate-700 rounded-md px-2 py-1 flex-1 bg-slate-900 text-slate-100" />
+            <button class="btn" onclick="adicionarCadastro('pagamentos','cfgPagNome')">
+              Adicionar
+            </button>
+          </div>`;
+      }
+    }
+
+    async function adicionarUsuario(){
+      const nome=document.getElementById("cfgUserNome").value.trim();
+      const login=document.getElementById("cfgUserLogin").value.trim().toLowerCase();
+      const senha=document.getElementById("cfgUserSenha").value.trim();
+      const perfil=document.getElementById("cfgUserPerfil").value;
+      if(!nome||!login||!senha){alertaModal("Preencha nome, usuário e senha.");return;}
+      const existe=await idb(null,"users","get",login);
+      if(existe){alertaModal("Usuário já existe.");return;}
+      await idb(null,"users","put",{usuario:login,senha,nome,perfil});
+      mostrarAbaConfig('usuarios');
+    }
+    async function excluirUsuario(login){
+      if(login==="admin")return;
+      if(!confirm("Excluir usuário?"))return;
+      await idb(null,"users","delete",login);
+      mostrarAbaConfig('usuarios');
+    }
+
+    async function adicionarCadastro(store,inputId){
+      const nome=document.getElementById(inputId).value.trim();
+      if(!nome){alertaModal("Informe o nome.");return;}
+      await idb(null,store,"put",{id:Date.now().toString(),nome});
+      document.getElementById(inputId).value="";
+      mostrarAbaConfig(store);
+      if(store==="vendedores")carregaVendedoresSelects();
+    }
+    async function excluirCadastro(store,id){
+      if(!confirm("Excluir registro?"))return;
+      await idb(null,store,"delete",id);
+      mostrarAbaConfig(store);
+      if(store==="vendedores")carregaVendedoresSelects();
+    }
+
+    async function exportarHistoricoCSV(){
+      const pedidos=await idb(null,"pedidos","getAll")||[];
+      const periodoSel=document.getElementById("historyPeriod").value;
+      const dIni=document.getElementById("historyStart").value;
+      const dFim=document.getElementById("historyEnd").value;
+      const statusF=document.getElementById("historyStatus").value;
+      const vendF=document.getElementById("historySeller").value;
+      const busca=document.getElementById("historySearch").value.trim().toLowerCase();
+
+      let periodoTexto="";
+      if(dIni && dFim) periodoTexto=`${dIni} até ${dFim}`;
+      else if(periodoSel==="currentMs") periodoTexto="Mês Atual";
+      else if(periodoSel==="prevMs") periodoTexto="Mês Anterior";
+      else periodoTexto="Todo Período";
+
+      let di=null,df=null;
+      if(dIni) di=new Date(dIni+"T00:00:00");
+      if(dFim) df=new Date(dFim+"T23:59:59");
+
+      const lista=pedidos.filter(p=>{
+        const dt=new Date(p.dataEntrada);
+        if(periodoSel==="currentMs"){
+          const n=new Date();
+          if(dt.getMonth()!==n.getMonth()||dt.getFullYear()!==n.getFullYear())return false;
+        }else if(periodoSel==="prevMs"){
+          const n=new Date();
+          let m=n.getMonth()-1,y=n.getFullYear();
+          if(m<0){m=11;y--;}
+          if(dt.getMonth()!==m||dt.getFullYear()!==y)return false;
+        }
+        if(di && dt<di)return false;
+        if(df && dt>df)return false;
+        if(statusF!=="Todos"){
+          if(statusF==="nao-conforme"){
+            if(!p.teveNC)return false;
+          }else if(statusF==="finalizada"){
+            if(p.status!=="finalizada")return false;
+          }else{
+            if(p.status!==statusF)return false;
+          }
+        }
+        if(vendF!=="Todos" && p.vendedor!==vendF)return false;
+        if(busca && !(
+          p.numero.toLowerCase().includes(busca)||
+          p.cliente.toLowerCase().includes(busca)||
+          String(p.valor).includes(busca)
+        ))return false;
+        return true;
+      });
+
+      const total=lista.length;
+      const fin=lista.filter(p=>p.status==="finalizada" && p.conforme).length;
+      const rota=lista.filter(p=>p.status==="rota").length;
+      const nc=lista.filter(p=>p.teveNC).length;
+
+      const ents=await idb(null,"entregadores","getAll")||[];
+      const linhasEntregador=[];
+      ents.forEach(e=>{
+        const l=lista.filter(p=>p.entregador===e.nome);
+        if(!l.length)return;
+        const rotaE=l.filter(p=>p.status==="rota").length;
+        const finE=l.filter(p=>p.status==="finalizada" && p.conforme).length;
+        const ncE=l.filter(p=>p.teveNC).length;
+        linhasEntregador.push([e.nome, l.length, finE, rotaE, ncE]);
+      });
+
+      const headerEntregas=["Número","Cliente","Vendedor","Valor","Pagamento",
+                            "Entrada","Saída","Entregador","Status","Teve NC","Justificativa","Observações"];
+
+      const csvLinhas=[];
+      csvLinhas.push(['Nova Sade','Controle de Entregas','','','','','','','','','']);
+      csvLinhas.push(['Relatório de Entregas','','','','','','','','','','']);
+      csvLinhas.push([`Período: ${periodoTexto}`,'','','','','','','','','','']);
+      csvLinhas.push([]);
+
+      csvLinhas.push(['Dashboard Geral','','','','','','','','','','']);
+      csvLinhas.push(['Em rota','Finalizadas (C)','Não conformes','Total','','','','','','','']);
+      csvLinhas.push([rota,fin,nc,total,'','','','','','','']);
+      csvLinhas.push([]);
+
+      csvLinhas.push(['Dashboard por Entregador','','','','','','','','','','']);
+      csvLinhas.push(['Entregador','Total','Finalizadas (C)','Em rota','Não conformes','','','','','','']);
+      linhasEntregador.forEach(l=>csvLinhas.push(l.concat(['','','','','',''])));
+      csvLinhas.push([]);
+
+      csvLinhas.push(['Lista de Entregas','','','','','','','','','','','']);
+      csvLinhas.push(headerEntregas);
+
+      lista.forEach(p=>{
+        csvLinhas.push([
+          p.numero,
+          p.cliente,
+          p.vendedor,
+          p.valor.toFixed(2),
+          p.pagamento||"",
+          p.dataEntrada?new Date(p.dataEntrada).toLocaleString("pt-BR"):"",
+          p.saida?new Date(p.saida).toLocaleString("pt-BR"):"",
+          p.entregador||"",
+          p.status,
+          p.teveNC?"sim":"não",
+          p.justificativa||"",
+          p.observacoes||""
+        ]);
+      });
+
+      const csv=csvLinhas
+        .map(row=>row.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(","))
+        .join("\n");
+      const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;a.download="historico_entregas.csv";a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function imprimirHistorico(){
+      const pedidos=await idb(null,"pedidos","getAll")||[];
+      const periodoSel=document.getElementById("historyPeriod").value;
+      const dIni=document.getElementById("historyStart").value;
+      const dFim=document.getElementById("historyEnd").value;
+      const statusF=document.getElementById("historyStatus").value;
+      const vendF=document.getElementById("historySeller").value;
+      const busca=document.getElementById("historySearch").value.trim().toLowerCase();
+
+      let periodoTexto="";
+      if(dIni && dFim) periodoTexto=`Período: ${dIni} até ${dFim}`;
+      else if(periodoSel==="currentMs") periodoTexto="Período: Mês Atual";
+      else if(periodoSel==="prevMs") periodoTexto="Período: Mês Anterior";
+      else periodoTexto="Período: Todo Período";
+
+      let di=null,df=null;
+      if(dIni)di=new Date(dIni+"T00:00:00");
+      if(dFim)df=new Date(dFim+"T23:59:59");
+      const lista=pedidos.filter(p=>{
+        const dt=new Date(p.dataEntrada);
+        if(periodoSel==="currentMs"){
+          const n=new Date();
+          if(dt.getMonth()!==n.getMonth()||dt.getFullYear()!==n.getFullYear())return false;
+        }else if(periodoSel==="prevMs"){
+          const n=new Date();
+          let m=n.getMonth()-1,y=n.getFullYear();
+          if(m<0){m=11;y--;}
+          if(dt.getMonth()!==m||dt.getFullYear()!==y)return false;
+        }
+        if(di && dt<di)return false;
+        if(df && dt>df)return false;
+        if(statusF!=="Todos"){
+          if(statusF==="nao-conforme"){
+            if(!p.teveNC)return false;
+          }else if(statusF==="finalizada"){
+            if(p.status!=="finalizada")return false;
+          }else{
+            if(p.status!==statusF)return false;
+          }
+        }
+        if(vendF!=="Todos" && p.vendedor!==vendF)return false;
+        if(busca && !(
+          p.numero.toLowerCase().includes(busca)||
+          p.cliente.toLowerCase().includes(busca)||
+          String(p.valor).includes(busca)
+        ))return false;
+        return true;
+      });
+
+      const ents=await idb(null,"entregadores","getAll")||[];
+      let entHtml="";
+      if(ents.length){
+        ents.forEach(e=>{
+          const l=lista.filter(p=>p.entregador===e.nome);
+          if(!l.length)return;
+          const rotaE=l.filter(p=>p.status==="rota").length;
+          const finE=l.filter(p=>p.status==="finalizada" && p.conforme).length;
+          const ncE=l.filter(p=>p.teveNC).length;
+          entHtml+=`
+            <div class="ent-card">
+              <div class="ent-nome">${e.nome}</div>
+              <div class="ent-valores">
+                <span>Total: ${l.length}</span>
+                <span>Finalizadas (C): ${finE}</span>
+                <span>Em rota: ${rotaE}</span>
+                <span>Não conformes: ${ncE}</span>
+              </div>
+            </div>`;
+        });
+      }else{
+        entHtml="<div class='ent-vazio'>Sem entregadores cadastrados.</div>";
+      }
+
+      const dash=document.getElementById("historyDashboard");
+      const agora=new Date().toLocaleString("pt-BR");
+      const w=window.open("","_blank");
+      w.document.write(`
+        <html>
+        <head>
+          <title>Relatório de Entregas</title>
+          <style>
+            @page{
+              size:A4 landscape;
+              margin:15mm;
+            }
+            body{
+              font-family:Arial, sans-serif;
+              margin:0;
+              background:#e5e7eb;
+              color:#020617;
+            }
+            .wrapper{
+              padding:10mm 5mm 5mm 5mm;
+            }
+            .header{
+              display:flex;
+              justify-content:space-between;
+              align-items:flex-start;
+              margin-bottom:16px;
+            }
+            .logo{
+              display:flex;
+              align-items:center;
+              gap:10px;
+            }
+            .logo-icon{
+              width:44px;height:44px;border-radius:999px;
+              background:linear-gradient(135deg,#06b6d4,#2563eb);
+              color:#fff;font-weight:bold;display:flex;
+              align-items:center;justify-content:center;
+              font-size:18px;
+            }
+            .title-main{font-size:22px;font-weight:700;}
+            .subtitle{font-size:12px;color:#4b5563;margin-top:2px;}
+            .periodo{
+              font-size:16px;
+              font-weight:600;
+              margin-top:8px;
+              color:#111827;
+            }
+            .generated{
+              font-size:11px;
+              color:#6b7280;
+              text-align:right;
+            }
+            .cards{
+              display:grid;
+              grid-template-columns:repeat(4,minmax(0,1fr));
+              gap:14px;
+              margin:12px 0 22px 0;
+            }
+            .cardp{
+              border-radius:20px;
+              padding:18px 20px;
+              color:#fff;
+              font-size:14px;
+              display:flex;
+              flex-direction:column;
+              justify-content:space-between;
+              min-height:90px;
+            }
+            .c1{background:#f97316;}
+            .c2{background:#059669;}
+            .c3{background:#dc2626;}
+            .c4{background:#020617;}
+            .cardp .num{
+              font-size:30px;
+              font-weight:700;
+              margin-top:10px;
+            }
+            h2{
+              margin:10px 0 6px 0;
+              font-size:16px;
+            }
+            .entregadores{
+              margin-top:4px;
+            }
+            .ent-card{
+              border-radius:14px;
+              background:#d1d5db;
+              padding:10px 14px;
+              margin-bottom:8px;
+              display:flex;
+              justify-content:space-between;
+              align-items:center;
+              font-size:12px;
+            }
+            .ent-nome{
+              font-weight:600;
+              color:#111827;
+            }
+            .ent-valores span{
+              margin-right:12px;
+            }
+            .ent-vazio{
+              font-size:12px;
+              color:#4b5563;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="wrapper">
+            <div class="header">
+              <div class="logo">
+                <div class="logo-icon">NS</div>
+                <div>
+                  <div class="title-main">Nova Sade</div>
+                  <div class="subtitle">Controle de Entregas</div>
+                  <div class="periodo">${periodoTexto}</div>
+                </div>
+              </div>
+              <div class="generated">
+                Relatório de Entregas<br/>
+                Gerado em: ${agora}
+              </div>
+            </div>
+
+            <div class="cards">
+              <div class="cardp c1">
+                <div class="text-xs uppercase">Em rota</div>
+                <div class="num">${
+                  dash.querySelector(".card-kpi:nth-child(1) .text-2xl")?.textContent || ""
+                }</div>
+              </div>
+              <div class="cardp c2">
+                <div class="text-xs uppercase">Finalizadas (C)</div>
+                <div class="num">${
+                  dash.querySelector(".card-kpi:nth-child(2) .text-2xl")?.textContent || ""
+                }</div>
+              </div>
+              <div class="cardp c3">
+                <div class="text-xs uppercase">Não conformes</div>
+                <div class="num">${
+                  dash.querySelector(".card-kpi:nth-child(3) .text-2xl")?.textContent || ""
+                }</div>
+              </div>
+              <div class="cardp c4">
+                <div class="text-xs uppercase">Total</div>
+                <div class="num">${
+                  dash.querySelector(".card-kpi:nth-child(4) .text-2xl")?.textContent || ""
+                }</div>
+              </div>
+            </div>
+
+            <h2>Entregas por Entregador (filtro atual)</h2>
+            <div class="entregadores">
+              ${entHtml}
+            </div>
+          </div>
+        </body>
+        </html>`);
+      w.document.close();
+      w.print();
+    }
+
+    function abrirExcluirComSenha(idPedido){
+      const html=`
+        <div class="text-xs space-y-3">
+          <div class="text-red-400 font-semibold mb-1">
+            Esta ação excluirá definitivamente a entrega selecionada.
+          </div>
+          <div>
+            <label class="small required block mb-1">Usuário admin</label>
+            <input id="exUser" class="border border-slate-700 rounded-md px-2 py-1 w-full
+                                     bg-slate-900 text-slate-100" />
+          </div>
+          <div>
+            <label class="small required block mb-1">Senha</label>
+            <input id="exPass" type="password"
+                   class="border border-slate-700 rounded-md px-2 py-1 w-full
+                          bg-slate-900 text-slate-100" />
+          </div>
+          <div class="flex justify-end gap-2 mt-2">
+            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
+            <button class="btn bg-red-600"
+                    onclick="confirmarExcluirComSenha('${idPedido}')">Excluir</button>
+          </div>
+        </div>`;
+      abreModal("Excluir Entrega",html);
+    }
+
+    async function confirmarExcluirComSenha(idPedido){
+      const u=document.getElementById("exUser").value.trim().toLowerCase();
+      const s=document.getElementById("exPass").value.trim();
+      if(!u||!s){alertaModal("Informe usuário e senha.");return;}
+      const user=await idb(null,"users","get",u);
+      if(!user || user.senha!==s || user.perfil!=="admin"){
+        alertaModal("Usuário/senha inválidos ou usuário não é admin.");return;
+      }
+      await idb(null,"pedidos","delete",idPedido);
+      fechaModal(true);
+      alertaModal("Entrega excluída.");
+      atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
+    }
+
+    function abrirResetHistorico(){
+      const html=`
+        <div class="text-xs space-y-3">
+          <div class="small font-semibold mb-2 text-red-400">
+            Resetar Histórico - Autenticação
+          </div>
+          <div>
+            <label class="small required block mb-1">Usuário admin</label>
+            <input id="rhUser" class="border border-slate-700 rounded-md px-2 py-1 w-full
+                                    bg-slate-900 text-slate-100" />
+          </div>
+          <div>
+            <label class="small required block mb-1">Senha</label>
+            <input id="rhPass" type="password"
+                   class="border border-slate-700 rounded-md px-2 py-1 w-full
+                          bg-slate-900 text-slate-100" />
+          </div>
+          <div class="flex justify-end gap-2 mt-3">
+            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
+            <button class="btn bg-red-600" onclick="confirmarResetHistoricoAuth()">
+              Continuar
+            </button>
+          </div>
+        </div>`;
+      abreModal("Resetar Histórico",html);
+    }
+
+    async function confirmarResetHistoricoAuth(){
+      const u=document.getElementById("rhUser").value.trim().toLowerCase();
+      const s=document.getElementById("rhPass").value.trim();
+      if(!u||!s){alertaModal("Informe usuário e senha.");return;}
+      const user=await idb(null,"users","get",u);
+      if(!user || user.senha!==s || user.perfil!=="admin"){
+        alertaModal("Usuário/senha inválidos ou usuário não é admin.");return;
+      }
+      const html=`
+        <div class="text-xs space-y-3">
+          <div class="text-red-400 font-semibold">
+            Todos os registros do histórico serão apagados.
+          </div>
+          <p>
+            Esta ação apagará definitivamente <b>todas</b> as entregas registradas,
+            tanto na tela inicial quanto no histórico. Esta ação não poderá ser desfeita.
+          </p>
+          <div class="flex justify-end gap-2 mt-3">
+            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
+            <button class="btn bg-red-600" onclick="executarResetHistorico()">
+              Confirmar
+            </button>
+          </div>
+        </div>`;
+      abreModal("Confirmar Reset do Histórico",html);
+    }
+
+        async function executarResetHistorico(){
+      await idb(null,"pedidos","clear");
+      fechaModal(true);
+      alertaModal("Histórico e entregas apagados com sucesso.");
+      atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
+    }
+
+    function abrirResetDia(){
+      const html=`
+        <div class="text-xs space-y-3">
+          <div class="small font-semibold mb-2 text-red-400">
+            Resetar Dia Atual - Autenticação
+          </div>
+          <div>
+            <label class="small required block mb-1">Usuário admin</label>
+            <input id="rdUser" class="border border-slate-700 rounded-md px-2 py-1 w-full
+                                    bg-slate-900 text-slate-100" />
+          </div>
+          <div>
+            <label class="small required block mb-1">Senha</label>
+            <input id="rdPass" type="password"
+                   class="border border-slate-700 rounded-md px-2 py-1 w-full
+                          bg-slate-900 text-slate-100" />
+          </div>
+          <div class="flex justify-end gap-2 mt-3">
+            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
+            <button class="btn bg-red-600" onclick="confirmarResetDiaAuth()">
+              Continuar
+            </button>
+          </div>
+        </div>`;
+      abreModal("Resetar Dia Atual",html);
+    }
+
+    async function confirmarResetDiaAuth(){
+      const u=document.getElementById("rdUser").value.trim().toLowerCase();
+      const s=document.getElementById("rdPass").value.trim();
+      if(!u||!s){alertaModal("Informe usuário e senha.");return;}
+      const user=await idb(null,"users","get",u);
+      if(!user || user.senha!==s || user.perfil!=="admin"){
+        alertaModal("Usuário/senha inválidos ou usuário não é admin.");return;
+      }
+      const html=`
+        <div class="text-xs space-y-3">
+          <div class="text-red-400 font-semibold">
+            Todas as entregas do dia atual serão apagadas.
+          </div>
+          <p>
+            Esta ação removerá definitivamente as entregas do <b>dia atual</b> da tela inicial
+            e também do histórico. Entregas de outros dias serão mantidas.
+            Esta ação não poderá ser desfeita.
+          </p>
+          <div class="flex justify-end gap-2 mt-3">
+            <button class="btn-ghost" onclick="fechaModal(true)">Cancelar</button>
+            <button class="btn bg-red-600" onclick="executarResetDia()">
+              Confirmar
+            </button>
+          </div>
+        </div>`;
+      abreModal("Confirmar Reset do Dia",html);
+    }
+
+    async function executarResetDia(){
+      const pedidos=await idb(null,"pedidos","getAll")||[];
+      const hoje=new Date().toISOString().slice(0,10);
+      const restantes=pedidos.filter(p=>!p.dataEntrada?.startsWith(hoje));
+      await idb(null,"pedidos","clear");
+      for(const p of restantes){
+        await idb(null,"pedidos","put",p);
+      }
+      fechaModal(true);
+      alertaModal("Entregas do dia atual apagadas com sucesso.");
+      atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
+    }
+
+    function showApp(){
+      document.getElementById("loginView").classList.add("hidden");
+      document.getElementById("appView").classList.remove("hidden");
+      document.getElementById("historyView").classList.add("hidden");
+      document.getElementById("btnHome").classList.add("hidden");
+      document.getElementById("btnHistory").classList.remove("hidden");
+      document.getElementById("btnConfig").classList.toggle("hidden",currentUser.perfil!=="admin");
+      document.getElementById("btnOpenRegister").disabled=currentUser.perfil==="observador";
+      document.getElementById("btnResetDay").classList.toggle("hidden",currentUser.perfil!=="admin");
+      document.getElementById("btnResetHistory").classList.toggle("hidden",currentUser.perfil!=="admin");
+      document.getElementById("userInfo").textContent=
+        `${currentUser.nome} (${currentUser.usuario}) - ${currentUser.perfil}`;
+      atualizaDashboard();atualizaCardsEntregadores();carregaVendedoresSelects();
+      atualizaListaPedidos();atualizaHistorico();
+    }
+
+    window.addEventListener("DOMContentLoaded",async()=>{
+      await ensureInit();
+      await carregaVendedoresSelects();
+
+      const btnLogin=document.getElementById("btnLogin");
+      const btnHome=document.getElementById("btnHome");
+      const btnHistory=document.getElementById("btnHistory");
+      const btnConfig=document.getElementById("btnConfig");
+      const btnLogout=document.getElementById("btnLogout");
+      const btnChangePass=document.getElementById("btnChangePass");
+      const btnOpenReg=document.getElementById("btnOpenRegister");
+      const btnExport=document.getElementById("btnExport");
+      const btnPrint=document.getElementById("btnPrint");
+      const btnBack=document.getElementById("btnBack");
+      const btnClearFilters=document.getElementById("btnClearFilters");
+      const btnResetHistory=document.getElementById("btnResetHistory");
+      const btnResetDay=document.getElementById("btnResetDay");
+
+      const inputUser=document.getElementById("loginUser");
+      const inputPass=document.getElementById("loginPass");
+      const togglePass=document.getElementById("toggleLoginPass");
+      const loginMsg=document.getElementById("loginMsg");
+
+      togglePass.onclick=()=>{
+        if(inputPass.type==="password"){
+          inputPass.type="text";
+          togglePass.textContent="Ocultar";
+        }else{
+          inputPass.type="password";
+          togglePass.textContent="Mostrar";
+        }
+      };
+
+      async function executarLogin(){
+        const u=inputUser.value.trim().toLowerCase();
+        const s=inputPass.value.trim();
+        if(!u||!s){loginMsg.textContent="Informe usuário e senha.";return;}
+        let user;
+        try{
+          user=await idb(null,"users","get",u);
+        }catch{
+          loginMsg.textContent="Erro ao acessar armazenamento local.";return;
+        }
+        if(!user){loginMsg.textContent="Usuário não encontrado.";return;}
+        if(user.senha!==s){loginMsg.textContent="Senha incorreta.";return;}
+        loginMsg.textContent="";
+        currentUser=user;
+        showApp();
+      }
+
+      btnLogin.onclick=executarLogin;
+      inputUser.addEventListener("keydown",e=>{
+        if(e.key==="Enter"){e.preventDefault();executarLogin();}
+      });
+      inputPass.addEventListener("keydown",e=>{
+        if(e.key==="Enter"){e.preventDefault();executarLogin();}
+      });
+
+      btnLogout.onclick=()=>{
+        currentUser=null;
+        document.getElementById("appView").classList.add("hidden");
+        document.getElementById("historyView").classList.add("hidden");
+        document.getElementById("loginView").classList.remove("hidden");
+        inputPass.value="";
+        document.getElementById("userInfo").textContent="";
+      };
+
+      btnHistory.onclick=()=>{
+        atualizaHistorico();
+        document.getElementById("appView").classList.add("hidden");
+        document.getElementById("historyView").classList.remove("hidden");
+        btnHome.classList.remove("hidden");
+      };
+
+      btnHome.onclick=()=>{
+        document.getElementById("historyView").classList.add("hidden");
+        document.getElementById("appView").classList.remove("hidden");
+        btnHome.classList.add("hidden");
+      };
+
+      btnConfig.onclick=()=>abreModalConfiguracoes();
+
+      btnChangePass.onclick=()=>{
+        if(!currentUser){
+          const u=inputUser.value.trim();
+          abreModalTrocarSenhaLogin(u);
+        }else{
+          abreModalTrocarSenhaInterno();
+        }
+      };
+
+      btnOpenReg.onclick=()=>abreModalRegistrarPedido();
+      btnExport.onclick=()=>exportarHistoricoCSV();
+      btnPrint.onclick=()=>imprimirHistorico();
+      btnBack.onclick=()=>{
+        document.getElementById("historyView").classList.add("hidden");
+        document.getElementById("appView").classList.remove("hidden");
+        btnHome.classList.add("hidden");
+      };
+      btnClearFilters.onclick=()=>limparFiltrosHistorico();
+      btnResetHistory.onclick=()=>abrirResetHistorico();
+      btnResetDay.onclick=()=>abrirResetDia();
+
+      document.getElementById("filterStatus").onchange=()=>atualizaListaPedidos();
+      document.getElementById("filterSeller").onchange=()=>atualizaListaPedidos();
+      document.getElementById("searchInput").oninput=()=>atualizaListaPedidos();
+
+      document.getElementById("historyPeriod").onchange=()=>atualizaHistorico();
+      document.getElementById("historyStart").onchange=()=>atualizaHistorico();
+      document.getElementById("historyEnd").onchange=()=>atualizaHistorico();
+      document.getElementById("historyStatus").onchange=()=>atualizaHistorico();
+      document.getElementById("historySeller").onchange=()=>atualizaHistorico();
+      document.getElementById("historySearch").oninput=()=>atualizaHistorico();
+    });
+  </script>
+</body>
+</html>
+
