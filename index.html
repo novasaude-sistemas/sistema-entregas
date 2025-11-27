@@ -2268,9 +2268,16 @@ window.executarResetDia = executarResetDia
       atualizaDashboard();atualizaCardsEntregadores();carregaVendedoresSelects();
       atualizaListaPedidos();atualizaHistorico();
     }
-window.showApp = showApp
+window.showApp = showApp;
 let inputUser;
 let inputPass;
+let btnOpenReg;
+let btnExport;
+let btnPrint;
+let btnBack;
+let btnClearFilters;
+let btnResetHistory;
+let btnResetDay;
 window.addEventListener("DOMContentLoaded",async()=>{
   await ensureInit();
   await carregaVendedoresSelects();
@@ -2281,13 +2288,14 @@ window.addEventListener("DOMContentLoaded",async()=>{
   const btnConfig=document.getElementById("btnConfig");
   const btnLogout=document.getElementById("btnLogout");
   const btnChangePass=document.getElementById("btnChangePass");
-  const btnOpenReg=document.getElementById("btnOpenRegister");
-  const btnExport=document.getElementById("btnExport");
-  const btnPrint=document.getElementById("btnPrint");
-  const btnBack=document.getElementById("btnBack");
-  const btnClearFilters=document.getElementById("btnClearFilters");
-  const btnResetHistory=document.getElementById("btnResetHistory");
-  const btnResetDay=document.getElementById("btnResetDay");
+btnOpenReg      = document.getElementById("btnOpenRegister");
+btnExport       = document.getElementById("btnExport");
+btnPrint        = document.getElementById("btnPrint");
+btnBack         = document.getElementById("btnBack");
+btnClearFilters = document.getElementById("btnClearFilters");
+btnResetHistory = document.getElementById("btnResetHistory");
+btnResetDay     = document.getElementById("btnResetDay");
+
 
 inputUser = document.getElementById("loginUser");
 inputPass = document.getElementById("loginPass");
@@ -2380,7 +2388,7 @@ if (btnChangePass) {
 }
 
 if (btnOpenReg) {
-  btnOpenReg.addEventListener("click", () => abreModalRegistrarPedido());
+  btnOpenReg.addEventListener("click", ()=>abreModalRegistrarPedido());
 }
 if (btnExport) {
   btnExport.addEventListener("click", () => exportarHistoricoCSV());
