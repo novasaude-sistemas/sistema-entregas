@@ -2129,7 +2129,7 @@ try {
       document.getElementById("historySeller").onchange=()=>atualizaHistorico();
       document.getElementById("historySearch").oninput=()=>atualizaHistorico();
     });
-<!-- ==== FIREBASE CONFIG START ==== -->
+// ==== FIREBASE CONFIG START ====
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import {
     getFirestore,
@@ -2151,6 +2151,6 @@ try {
   const db = getFirestore(app);
   const entregasRef = collection(db, "entregas"); // mesma coleção que você já usa
 </script>
-<!-- ==== FIREBASE CONFIG END ==== -->
+// ==== FIREBASE CONFIG END ====
 </body>
 </html>
