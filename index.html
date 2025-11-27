@@ -313,6 +313,7 @@
           f(d.getHours())+":"+f(d.getMinutes())+":"+f(d.getSeconds());
       }
     }
+window.updateClock = updateClock;
     setInterval(updateClock,1000);updateClock();
 
     setInterval(()=>{
@@ -361,7 +362,7 @@
         };
       });
     }
-
+window.idb = idb
     async function ensureInit(){
       const users=await idb(null,"users","getAll")||[];
       if(users.length===0){
@@ -387,7 +388,7 @@
         await idb(null,"pagamentos","put",{id:"p4",nome:"Transferência"});
       }
     }
-
+window.ensureInit = ensureInit
     function abreModal(titulo,html){
       const bg=document.getElementById("modalBg");
       const cont=document.getElementById("modalCont");
@@ -398,11 +399,13 @@
          </div>`+html;
       bg.classList.remove("hidden");
     }
+window.abreModal = abreModal
     function fechaModal(resetStack=false){
       document.getElementById("modalBg").classList.add("hidden");
       document.getElementById("modalCont").innerHTML="";
       if(resetStack) modalStackContent=null;
     }
+window.fechaModal = fechaModal
     function alertaModal(msg, onClose){
       const bg=document.getElementById("modalBg");
       const cont=document.getElementById("modalCont");
@@ -417,13 +420,14 @@
          <button class="btn w-full" onclick="restaurarModalStack();${onClose?onClose:""}">Fechar</button>`;
       bg.classList.remove("hidden");
     }
+window.alertaModal = alertaModal
     function restaurarModalStack(){
       if(!modalStackContent){fechaModal(true);return;}
       const cont=document.getElementById("modalCont");
       cont.innerHTML=modalStackContent;
       modalStackContent=null;
     }
-
+window.restaurarModalStack = restaurarModalStack
     function aplicarMascaraMoeda(el){
       let v=el.value.replace(/[^0-9]/g,"");
       if(v==="") v="0";
@@ -434,18 +438,20 @@
       const intFmt=int.replace(/\B(?=(\d{3})+(?!\d))/g,".");
       el.value=intFmt+","+dec;
     }
+window.aplicarMascaraMoeda = aplicarMascaraMoeda
     function parseMoedaToNumber(str){
       if(!str) return 0;
       const limpo=str.replace(/\./g,"").replace(",",".");
       const n=parseFloat(limpo);
       return isNaN(n)?0:n;
     }
+window.parseMoedaToNumber = parseMoedaToNumber
     function capitalizarPrimeira(str){
       const t=str.trim();
       if(!t)return"";
       return t.charAt(0).toUpperCase()+t.slice(1);
     }
-
+window.capitalizarPrimeira = capitalizarPrimeira
     async function carregaVendedoresSelects(){
       const vends=await idb(null,"vendedores","getAll")||[];
       const selFiltro=document.getElementById("filterSeller");
@@ -455,7 +461,7 @@
       if(selFiltro) selFiltro.innerHTML=opts;
       if(selHist) selHist.innerHTML=opts;
     }
-
+window.carregaVendedoresSelects = carregaVendedoresSelects
     async function atualizaDashboard(){
       const pedidos=await idb(null,"pedidos","getAll")||[];
       const hoje=new Date().toISOString().slice(0,10);
@@ -499,7 +505,7 @@
           ${linhas.map(l=>`<div>${l}</div>`).join("")}
         </div>`;
       }
-
+window.renderTooltip = renderTooltip
       document.getElementById("dashboard").innerHTML=`
         <div class="card-kpi bg-blue-600">
           <div class="text-xs uppercase">SEPARAÇÃO</div>
@@ -551,7 +557,7 @@
           Nenhum entregador cadastrado.
         </p>`;
     }
-
+window.atualizaCardsEntregadores = atualizaCardsEntregadores
     function linhaEntregadorSaida(p){
       if(!p.saida || !p.entregador) return "";
       const hSaida=new Date(p.saida).toLocaleTimeString("pt-BR");
@@ -559,7 +565,7 @@
         Entregador: ${p.entregador} - Saída para rota de entrega: ${hSaida}
       </div>`;
     }
-
+window.linhaEntregadorSaida = linhaEntregadorSaida
     async function atualizaListaPedidos(){
       const pedidos=await idb(null,"pedidos","getAll")||[];
       const hoje=new Date().toISOString().slice(0,10);
@@ -585,7 +591,7 @@
           String(p.valor).includes(busca)
         );
       }
-
+window.atualizaListaPedidos = atualizaListaPedidos
       const corStatus=p=>{
         if(p.status==="separacao")return"badge badge-blue";
         if(p.status==="rota")return"badge badge-orange";
@@ -655,7 +661,7 @@
       await idb(null,"pedidos","delete",id);
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
     }
-
+window.excluirPedido = excluirPedido
     async function atualizaHistorico(){
       const pedidos=await idb(null,"pedidos","getAll")||[];
       const periodo=document.getElementById("historyPeriod").value;
@@ -664,7 +670,7 @@
       const statusF=document.getElementById("historyStatus").value;
       const vendF=document.getElementById("historySeller").value;
       const busca=document.getElementById("historySearch").value.trim().toLowerCase();
-
+window.atualizaHistorico = atualizaHistorico
       let lista=pedidos;
       let di=null,df=null;
       if(dIni) di=new Date(dIni+"T00:00:00");
@@ -807,7 +813,7 @@
       document.getElementById("historySearch").value="";
       atualizaHistorico();
     }
-
+window.limparFiltrosHistorico = limparFiltrosHistorico
     async function abrirDetalhesEntrega(id){
       const p=await idb(null,"pedidos","get",id);
       if(!p){alertaModal("Entrega não encontrada.");return;}
@@ -824,6 +830,7 @@
       }else{
         andHtml+="<div class='text-xs text-slate-400'>Sem andamentos</div>";
       }
+window.abrirDetalhesEntrega = abrirDetalhesEntrega
       const html=`
         <div class="text-xs space-y-1">
           <div><b>Número:</b> ${p.numero}</div>
@@ -860,7 +867,7 @@
           • ${p.entregador||"-"}
         </div>`;
       }
-
+window.abrirAcoesEntrega = abrirAcoesEntrega
       let botoesSaida="";
       let blocoResultado="";
 
@@ -955,6 +962,7 @@ try {
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
+window.confirmarSaida = confirmarSaida
 // ==== FIRESTORE SAVE HOOK END ====
       fechaModal(true);
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
@@ -971,6 +979,7 @@ try {
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
+window.desfazerSaida = desfazerSaida
 // ==== FIRESTORE SAVE HOOK END ====
       fechaModal(true);
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
@@ -989,6 +998,7 @@ try {
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
+window.finalizarEntregaConforme = finalizarEntregaConforme
 // ==== FIRESTORE SAVE HOOK END ====
       fechaModal(true);
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
@@ -1009,6 +1019,7 @@ try {
         </div>`;
       abreModal("Registrar Não Conforme",html);
     }
+window.abrirNaoConforme = abrirNaoConforme
     async function salvarNaoConformeInicial(id){
       let txt=document.getElementById("ncJust").value;
       txt=capitalizarPrimeira(txt);
@@ -1033,6 +1044,7 @@ try {
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
+window.salvarNaoConformeInicial = salvarNaoConformeInicial
 // ==== FIRESTORE SAVE HOOK END ====
       fechaModal(true);
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
@@ -1058,6 +1070,7 @@ try {
         </div>`;
       abreModal("Registrar Andamento - Não Conforme",html);
     }
+window.abrirRegistrarAndamento = abrirRegistrarAndamento
     async function salvarAndamentoNc(id,acao){
       let txt=document.getElementById("ncAnd").value;
       txt=capitalizarPrimeira(txt);
@@ -1074,6 +1087,7 @@ try {
         p.status="finalizada";
         p.conforme=true;
       }
+window.salvarAndamentoNc = salvarAndamentoNc
 // ==== FIRESTORE SAVE HOOK START ====
 await idb(null,"pedidos","put",p);
 
@@ -1101,6 +1115,7 @@ try {
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
+window.desfazerFinalizacao = desfazerFinalizacao
 // ==== FIRESTORE SAVE HOOK END ====
       fechaModal(true);
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
@@ -1137,7 +1152,7 @@ try {
         </div>`;
       abreModal("Trocar Senha",html);
     }
-
+window.abreModalTrocarSenhaLogin = abreModalTrocarSenhaLogin
     async function executarTrocaSenhaLogin(usuarioDigitado){
       const usuario=usuarioDigitado.trim().toLowerCase();
       if(!usuario){alertaModal("Informe o usuário na tela de login antes de trocar a senha.");return;}
@@ -1160,6 +1175,7 @@ try {
       fechaModal(true);
       alertaModal("Senha alterada com sucesso.");
     }
+window.executarTrocaSenhaLogin = executarTrocaSenhaLogin
 
     function abreModalTrocarSenhaInterno(){
       if(!currentUser)return;
@@ -1193,7 +1209,7 @@ try {
         </div>`;
       abreModal("Trocar Senha",html);
     }
-
+window.abreModalTrocarSenhaInterno = abreModalTrocarSenhaInterno
     async function executarTrocaSenhaInterno(){
       if(!currentUser)return;
       const atual=document.getElementById("senhaAtualInt").value.trim();
@@ -1213,6 +1229,7 @@ try {
       fechaModal(true);
       alertaModal("Senha alterada com sucesso.");
     }
+window.executarTrocaSenhaInterno = executarTrocaSenhaInterno
 
     async function abreModalRegistrarPedido(){
       if(!currentUser || currentUser.perfil==="observador")return;
@@ -1275,7 +1292,7 @@ try {
         </div>`;
       abreModal("Registrar Pedido",html);
     }
-
+window.abreModalRegistrarPedido = abreModalRegistrarPedido
     async function salvarNovoPedido(){
       const numero=document.getElementById("rpNumero").value.trim();
       const cliente=document.getElementById("rpCliente").value.trim();
@@ -1293,7 +1310,7 @@ try {
         alertaModal("Informe um valor maior que zero.");
         return;
       }
-
+window.salvarNovoPedido = salvarNovoPedido
       const pedido={
         id:Date.now().toString(),
         numero,
@@ -1347,6 +1364,7 @@ try {
       abreModal("Configurações",html);
       mostrarAbaConfig('usuarios');
     }
+window.abreModalConfiguracoes = abreModalConfiguracoes
 
     async function mostrarAbaConfig(aba){
       const cont=document.getElementById("configContent");
@@ -1437,7 +1455,7 @@ try {
           </div>`;
       }
     }
-
+window.mostrarAbaConfig = mostrarAbaConfig
     async function adicionarUsuario(){
       const nome=document.getElementById("cfgUserNome").value.trim();
       const login=document.getElementById("cfgUserLogin").value.trim().toLowerCase();
@@ -1455,7 +1473,7 @@ try {
       await idb(null,"users","delete",login);
       mostrarAbaConfig('usuarios');
     }
-
+window.adicionarUsuario = adicionarUsuario
     async function adicionarCadastro(store,inputId){
       const nome=document.getElementById(inputId).value.trim();
       if(!nome){alertaModal("Informe o nome.");return;}
@@ -1464,13 +1482,14 @@ try {
       mostrarAbaConfig(store);
       if(store==="vendedores")carregaVendedoresSelects();
     }
+window.adicionarCadastro = adicionarCadastro
     async function excluirCadastro(store,id){
       if(!confirm("Excluir registro?"))return;
       await idb(null,store,"delete",id);
       mostrarAbaConfig(store);
       if(store==="vendedores")carregaVendedoresSelects();
     }
-
+window.excluirCadastro = excluirCadastro
     async function exportarHistoricoCSV(){
       const pedidos=await idb(null,"pedidos","getAll")||[];
       const periodoSel=document.getElementById("historyPeriod").value;
@@ -1846,7 +1865,7 @@ try {
         </div>`;
       abreModal("Excluir Entrega",html);
     }
-
+window.abrirExcluirComSenha = abrirExcluirComSenha
     async function confirmarExcluirComSenha(idPedido){
       const u=document.getElementById("exUser").value.trim().toLowerCase();
       const s=document.getElementById("exPass").value.trim();
@@ -1860,7 +1879,7 @@ try {
       alertaModal("Entrega excluída.");
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
     }
-
+window.confirmarExcluirComSenha = confirmarExcluirComSenha
     function abrirResetHistorico(){
       const html=`
         <div class="text-xs space-y-3">
@@ -1887,7 +1906,7 @@ try {
         </div>`;
       abreModal("Resetar Histórico",html);
     }
-
+window.abrirResetHistorico = abrirResetHistorico
     async function confirmarResetHistoricoAuth(){
       const u=document.getElementById("rhUser").value.trim().toLowerCase();
       const s=document.getElementById("rhPass").value.trim();
@@ -1914,14 +1933,14 @@ try {
         </div>`;
       abreModal("Confirmar Reset do Histórico",html);
     }
-
+window.confirmarResetHistoricoAuth = confirmarResetHistoricoAuth
         async function executarResetHistorico(){
       await idb(null,"pedidos","clear");
       fechaModal(true);
       alertaModal("Histórico e entregas apagados com sucesso.");
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
     }
-
+window.executarResetHistorico = executarResetHistorico
     function abrirResetDia(){
       const html=`
         <div class="text-xs space-y-3">
@@ -1948,7 +1967,7 @@ try {
         </div>`;
       abreModal("Resetar Dia Atual",html);
     }
-
+window.abrirResetDia = abrirResetDia
     async function confirmarResetDiaAuth(){
       const u=document.getElementById("rdUser").value.trim().toLowerCase();
       const s=document.getElementById("rdPass").value.trim();
@@ -1976,7 +1995,7 @@ try {
         </div>`;
       abreModal("Confirmar Reset do Dia",html);
     }
-
+window.confirmarResetDiaAuth = confirmarResetDiaAuth
     async function executarResetDia(){
       const pedidos=await idb(null,"pedidos","getAll")||[];
       const hoje=new Date().toISOString().slice(0,10);
@@ -1992,6 +2011,7 @@ try {
 } catch (e) {
   console.error("Erro ao salvar no Firestore", e);
 }
+window.executarResetDia = executarResetDia
 // ==== FIRESTORE SAVE HOOK END ====
       }
       fechaModal(true);
@@ -2014,7 +2034,7 @@ try {
       atualizaDashboard();atualizaCardsEntregadores();carregaVendedoresSelects();
       atualizaListaPedidos();atualizaHistorico();
     }
-
+window.showApp = showApp
     window.addEventListener("DOMContentLoaded",async()=>{
       await ensureInit();
       await carregaVendedoresSelects();
@@ -2064,7 +2084,7 @@ try {
         currentUser=user;
         showApp();
       }
-
+window.executarLogin = executarLogin
       btnLogin.onclick=executarLogin;
       inputUser.addEventListener("keydown",e=>{
         if(e.key==="Enter"){e.preventDefault();executarLogin();}
