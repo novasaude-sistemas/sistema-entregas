@@ -2306,11 +2306,11 @@ const loginMsg=document.getElementById("loginMsg");
 });
 
       async function executarLogin(){
-        const u=inputUser.value.trim().toLowerCase();
-        const s=inputPass.value.trim();
-        if(!u||!s){loginMsg.textContent="Informe usuário e senha.";return;}
-        let user;
-        try{
+  const u = inputUser.value.trim().toLowerCase();
+  const s = inputPass.value.trim();
+  if(!u || !s){loginMsg.textContent = "Informe usuário e senha."; return;}
+  let user;
+          try{
           user=await idb(null,"users","get",u);
         }catch{
           loginMsg.textContent="Erro ao acessar armazenamento local.";return;
