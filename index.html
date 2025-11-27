@@ -946,14 +946,32 @@
       p.entregador=entregador;
       p.saida=new Date().toISOString();
       p.status="rota";
-      await idb(null,"pedidos","put",p);
+    // ==== FIRESTORE SAVE HOOK START ====
+await idb(null,"pedidos","put",p);
+
+// envia o mesmo pedido para o Firestore
+try {
+  await addDoc(entregasRef, p);
+} catch (e) {
+  console.error("Erro ao salvar no Firestore", e);
+}
+// ==== FIRESTORE SAVE HOOK END ====
       fechaModal(true);
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
     }
     async function desfazerSaida(id){
       const p=await idb(null,"pedidos","get",id);if(!p)return;
       p.saida=null;p.entregador=null;p.status="separacao";
-      await idb(null,"pedidos","put",p);
+// ==== FIRESTORE SAVE HOOK START ====
+await idb(null,"pedidos","put",p);
+
+// envia o mesmo pedido para o Firestore
+try {
+  await addDoc(entregasRef, p);
+} catch (e) {
+  console.error("Erro ao salvar no Firestore", e);
+}
+// ==== FIRESTORE SAVE HOOK END ====
       fechaModal(true);
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
     }
@@ -962,7 +980,16 @@
       const p=await idb(null,"pedidos","get",id);if(!p)return;
       p.status="finalizada";
       p.conforme=true;
-      await idb(null,"pedidos","put",p);
+// ==== FIRESTORE SAVE HOOK START ====
+await idb(null,"pedidos","put",p);
+
+// envia o mesmo pedido para o Firestore
+try {
+  await addDoc(entregasRef, p);
+} catch (e) {
+  console.error("Erro ao salvar no Firestore", e);
+}
+// ==== FIRESTORE SAVE HOOK END ====
       fechaModal(true);
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
     }
@@ -997,7 +1024,16 @@
         descricao:txt
       });
       p.teveNC=true;
-      await idb(null,"pedidos","put",p);
+// ==== FIRESTORE SAVE HOOK START ====
+await idb(null,"pedidos","put",p);
+
+// envia o mesmo pedido para o Firestore
+try {
+  await addDoc(entregasRef, p);
+} catch (e) {
+  console.error("Erro ao salvar no Firestore", e);
+}
+// ==== FIRESTORE SAVE HOOK END ====
       fechaModal(true);
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
     }
@@ -1038,7 +1074,16 @@
         p.status="finalizada";
         p.conforme=true;
       }
-      await idb(null,"pedidos","put",p);
+// ==== FIRESTORE SAVE HOOK START ====
+await idb(null,"pedidos","put",p);
+
+// envia o mesmo pedido para o Firestore
+try {
+  await addDoc(entregasRef, p);
+} catch (e) {
+  console.error("Erro ao salvar no Firestore", e);
+}
+// ==== FIRESTORE SAVE HOOK END ====
       fechaModal(true);
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
     }
@@ -1047,7 +1092,16 @@
       const p=await idb(null,"pedidos","get",id);if(!p)return;
       p.status=p.saida?"rota":"separacao";
       p.conforme=null;
-      await idb(null,"pedidos","put",p);
+// ==== FIRESTORE SAVE HOOK START ====
+await idb(null,"pedidos","put",p);
+
+// envia o mesmo pedido para o Firestore
+try {
+  await addDoc(entregasRef, p);
+} catch (e) {
+  console.error("Erro ao salvar no Firestore", e);
+}
+// ==== FIRESTORE SAVE HOOK END ====
       fechaModal(true);
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
     }
@@ -1257,7 +1311,16 @@
         andamentos:[],
         teveNC:false
       };
-      await idb(null,"pedidos","put",pedido);
+// ==== FIRESTORE SAVE HOOK START ====
+await idb(null,"pedidos","put",pedido);
+
+// envia o mesmo pedido para o Firestore
+try {
+  await addDoc(entregasRef, pedido);
+} catch (e) {
+  console.error("Erro ao salvar no Firestore", e);
+}
+// ==== FIRESTORE SAVE HOOK END ====
       fechaModal(true);
       atualizaDashboard();atualizaCardsEntregadores();atualizaListaPedidos();atualizaHistorico();
     }
@@ -1920,7 +1983,16 @@
       const restantes=pedidos.filter(p=>!p.dataEntrada?.startsWith(hoje));
       await idb(null,"pedidos","clear");
       for(const p of restantes){
-        await idb(null,"pedidos","put",p);
+// ==== FIRESTORE SAVE HOOK START ====
+await idb(null,"pedidos","put",p);
+
+// envia o mesmo pedido para o Firestore
+try {
+  await addDoc(entregasRef, p);
+} catch (e) {
+  console.error("Erro ao salvar no Firestore", e);
+}
+// ==== FIRESTORE SAVE HOOK END ====
       }
       fechaModal(true);
       alertaModal("Entregas do dia atual apagadas com sucesso.");
@@ -2058,6 +2130,29 @@
       document.getElementById("historySearch").oninput=()=>atualizaHistorico();
     });
   </script>
+<!-- ==== FIREBASE CONFIG START ==== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB5kSSNVyfIyGq9cOe1n8EmMtVhXW7gryY",
+    authDomain: "nova-saude-sistema-entregas.firebaseapp.com",
+    projectId: "nova-saude-sistema-entregas",
+    storageBucket: "nova-saude-sistema-entregas.firebasestorage.app",
+    messagingSenderId: "817212957836",
+    appId: "1:817212957836:web:920d639f86757b0fde87a9"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const entregasRef = collection(db, "pedidos"); // mesma coleção que você já usa
+</script>
+<!-- ==== FIREBASE CONFIG END ==== -->
 </body>
 </html>
-
